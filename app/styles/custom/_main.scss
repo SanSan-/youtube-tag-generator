@@ -1,0 +1,57 @@
+body {
+  background: $background;
+  font: 400 13px "CoreSans", Arial, sans-serif;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  color: $fontColor;
+  letter-spacing: .02em;
+  position: relative;
+  margin: ($padding * 4) ($padding * 2);
+}
+
+ul, li {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+a {
+  color: $fontColor;
+  text-decoration: none;
+
+  &:hover {
+    color: $hyperlinkHover;
+  }
+
+  &:active {
+    color: $hyperlinkActive;
+  }
+
+  &:visited {
+    color: $hyperlinkVisited;
+  }
+}
+
+.ant-form-item {
+  margin-bottom: 0;
+}
+
+.ant-radio-button-wrapper:hover {
+  color: $mainDescriptionTextColor;
+  background: $activeStatusBackground;
+}
+
+.ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled):first-child,
+.ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled) {
+  color: $defaultBackground;
+  background: $greenfieldBackground;
+}
+
+.has-error.has-feedback .ant-form-item-children-icon, .ant-form-item-children-icon {
+  margin-right: 2px;
+  z-index: 3;
+}
+
+.ant-input-affix-wrapper .ant-input-prefix, .ant-input-affix-wrapper .ant-input-suffix {
+  opacity: 50%;
+}

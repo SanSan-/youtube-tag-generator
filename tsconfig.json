@@ -1,0 +1,47 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "app",
+    "sourceMap": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "module": "commonjs",
+    "target": "es2020",
+    "jsx": "react",
+    "strict": true,
+    "strictNullChecks": false,
+    "typeRoots": [
+      "node_modules/@types",
+      "app/@types"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "~app*": ["app*"],
+      "~src*": ["app/src*"],
+      "~actions*": ["app/src/actions*"],
+      "~components*": ["app/src/components*"],
+      "~forms*": ["app/src/components/forms*"],
+      "~hooks*": ["app/src/hooks*"],
+      "~model*": ["app/src/model*"],
+      "~const*": ["app/src/model/constants*"],
+      "~dictionaries*": ["app/src/model/dictionaries*"],
+      "~enums*": ["app/src/model/enums*"],
+      "~exceptions*": ["app/src/model/exceptions*"],
+      "~types*": ["app/src/model/types*"],
+      "~reducers*": ["app/src/reducers*"],
+      "~utils*": ["app/src/utils*"],
+      "~rest*": ["rest-server/app/routes/mock*"]
+    },
+    "moduleResolution": "node",
+    "esModuleInterop": true
+  },
+  "include": [
+    "./app/**/*",
+    "./webpack/**/*",
+    "./test/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
