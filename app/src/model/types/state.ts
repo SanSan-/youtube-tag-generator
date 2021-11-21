@@ -1,5 +1,6 @@
 import Header from '~types/classes/Header';
-import { ReactNode } from 'react';
+import React, { ReactElement, ReactNode } from 'react';
+import { Table } from 'antd';
 
 export interface DefaultState {
   [key: string]: unknown;
@@ -50,6 +51,23 @@ export interface PromiseDialog extends CommonDialog {
   reject: Promise<void>;
 }
 
+export type EditableTableProps = Parameters<typeof Table>[0];
+
+export type TagsType = Record<React.Key, string[]>;
+
+export type ColumnTypes = Exclude<EditableTableProps['columns'], undefined>;
+
+export interface DataType {
+  key: React.Key;
+  keywords: ReactElement;
+}
+
+export interface EditableTableState {
+  keywords: TagsType;
+  dataSource: DataType[];
+  count: number;
+}
+
 /**
  * ModuleState interfaces
  */
@@ -71,7 +89,10 @@ export interface BreadcrumbState extends DefaultStringState {
 }
 
 export interface TagsState {
+  tagsCloud?: string[];
   isLoadingExport?: boolean;
+  isLoadingGeneration?: boolean;
+  isLoadingStatistic?: boolean;
 }
 
 /**
