@@ -23,7 +23,7 @@ const Error: React.FC<Props> = ({ title, children, details, message, okLabel, re
     visible={visible}>
     <p>{message}</p>
     <Collapse>
-      <Panel header="More information" key="panel-1">
+      <Panel header='More information' key='panel-1'>
         <p>{details}</p>
       </Panel>
     </Collapse>

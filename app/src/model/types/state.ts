@@ -1,5 +1,6 @@
 import Header from '~types/classes/Header';
-import { ReactNode } from 'react';
+import React, { ReactElement, ReactNode } from 'react';
+import { Table } from 'antd';
 
 export interface DefaultState {
   [key: string]: unknown;
@@ -50,6 +51,23 @@ export interface PromiseDialog extends CommonDialog {
   reject: Promise<void>;
 }
 
+export type EditableTableProps = Parameters<typeof Table>[0];
+
+export type TagsType = Record<React.Key, string[]>;
+
+export type ColumnTypes = Exclude<EditableTableProps['columns'], undefined>;
+
+export interface DataType {
+  key: React.Key;
+  keywords: ReactElement;
+}
+
+export interface EditableTableState {
+  keywords: TagsType;
+  dataSource: DataType[];
+  count: number;
+}
+
 /**
  * ModuleState interfaces
  */
@@ -57,7 +75,7 @@ export interface PromiseDialog extends CommonDialog {
 export interface PageableState extends DefaultState {
   totalRecords: number;
   pageSizeOptions: string[];
-  tableHeaders?: Header[]
+  tableHeaders?: Header[];
 }
 
 export interface SortableState extends DefaultState {
@@ -70,8 +88,16 @@ export interface BreadcrumbState extends DefaultStringState {
   link: string;
 }
 
-export interface TagsState {
+export interface TagCloudItem extends DefaultState {
+  key: number;
+  tag: string;
+}
+
+export interface TagsState extends DefaultState {
+  tagsCloud?: string[];
   isLoadingExport?: boolean;
+  isLoadingGeneration?: boolean;
+  isLoadingStatistic?: boolean;
 }
 
 /**
@@ -89,7 +115,7 @@ export interface CommonState extends DefaultState {
   spinners?: Record<string, SpinnerState>;
   background?: boolean;
   modals?: ModalState[];
-  dialogs?: PromiseDialog[]
+  dialogs?: PromiseDialog[];
 }
 
 export interface ModuleState extends DefaultState {

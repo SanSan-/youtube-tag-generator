@@ -5,7 +5,10 @@ import produce from 'immer';
 import { saveBase64StringAsFile } from '~utils/SaveUtils';
 
 export const initialState: TagsState = {
-  isLoadingExport: false
+  tagsCloud: [],
+  isLoadingExport: false,
+  isLoadingGeneration: false,
+  isLoadingStatistic: false
 };
 
 const startExport = (draft: TagsState): TagsState => {
@@ -14,7 +17,27 @@ const startExport = (draft: TagsState): TagsState => {
 };
 
 const endExport = (draft: TagsState): TagsState => {
-  draft.isLoadingExport = true;
+  draft.isLoadingExport = false;
+  return draft;
+};
+
+const startGeneration = (draft: TagsState): TagsState => {
+  draft.isLoadingGeneration = true;
+  return draft;
+};
+
+const endGeneration = (draft: TagsState): TagsState => {
+  draft.isLoadingGeneration = false;
+  return draft;
+};
+
+const startLoadStatistic = (draft: TagsState): TagsState => {
+  draft.isLoadingStatistic = true;
+  return draft;
+};
+
+const endLoadStatistic = (draft: TagsState): TagsState => {
+  draft.isLoadingStatistic = false;
   return draft;
 };
 
@@ -22,6 +45,13 @@ const exportSuccess = (draft: TagsState, data: string, fileName: string): TagsSt
   saveBase64StringAsFile(data, fileName);
   return endExport(draft);
 };
+
+const generationSuccess = (draft: TagsState, data: string[]): TagsState => {
+  draft.tagsCloud = data;
+  return endGeneration(draft);
+};
+
+const loadStatisticSuccess = (draft: TagsState): TagsState => endLoadStatistic(draft);
 
 const tagsGenerator = (state: TagsState = initialState, action: TagsAction): TagsState =>
   produce(state, (draft: TagsState): TagsState => {
@@ -32,6 +62,18 @@ const tagsGenerator = (state: TagsState = initialState, action: TagsAction): Tag
         return startExport(draft);
       case ActionType.END_EXPORT_TO_EXCEL:
         return endExport(draft);
+      case ActionType.TAGS_GENERATION_SUCCESS:
+        return generationSuccess(draft, action.tagsCloud);
+      case ActionType.START_TAGS_GENERATION:
+        return startGeneration(draft);
+      case ActionType.END_TAGS_GENERATION:
+        return endGeneration(draft);
+      case ActionType.LOAD_STATISTIC_SUCCESS:
+        return loadStatisticSuccess(draft);
+      case ActionType.START_LOAD_STATISTIC:
+        return startLoadStatistic(draft);
+      case ActionType.END_LOAD_STATISTIC:
+        return endLoadStatistic(draft);
       case ActionType.INIT:
         return initialState;
       default:
