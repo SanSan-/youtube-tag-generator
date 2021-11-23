@@ -75,7 +75,7 @@ export interface EditableTableState {
 export interface PageableState extends DefaultState {
   totalRecords: number;
   pageSizeOptions: string[];
-  tableHeaders?: Header[]
+  tableHeaders?: Header[];
 }
 
 export interface SortableState extends DefaultState {
@@ -88,7 +88,12 @@ export interface BreadcrumbState extends DefaultStringState {
   link: string;
 }
 
-export interface TagsState {
+export interface TagCloudItem extends DefaultState {
+  key: number;
+  tag: string;
+}
+
+export interface TagsState extends DefaultState {
   tagsCloud?: string[];
   isLoadingExport?: boolean;
   isLoadingGeneration?: boolean;
@@ -110,7 +115,7 @@ export interface CommonState extends DefaultState {
   spinners?: Record<string, SpinnerState>;
   background?: boolean;
   modals?: ModalState[];
-  dialogs?: PromiseDialog[]
+  dialogs?: PromiseDialog[];
 }
 
 export interface ModuleState extends DefaultState {

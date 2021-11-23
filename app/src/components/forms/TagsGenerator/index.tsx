@@ -2,7 +2,7 @@ import React, { ReactElement, useEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import { Button, Form, Input, Switch, Table } from 'antd';
 import * as actions from '~actions/module/tagsGenerator';
-import { TagsState, TagsType } from '~types/state';
+import { TagCloudItem, TagsState, TagsType } from '~types/state';
 import { GeneralState } from '~types/store';
 import { bindActionCreators } from 'redux';
 import { TagsAction, ThunkResult } from '~types/action';
@@ -24,6 +24,7 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
   const [tagsCount, setTagsCount] = useState(0);
   const [tagsCloudCount, setTagsCloudCount] = useState(0);
   const [tagsCloudMap, setTagsCloudMap] = useState([] as string[][]);
+  const [tagsCloud, setTagsCloud] = useState([] as TagCloudItem[]);
   const [isXLS, setIsXLS] = useState(false);
   const [addTimestamp, setAddTimestamp] = useState(false);
   useEffect(() => {
@@ -31,6 +32,9 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
       exportData('');
     }
   }, []);
+  useEffect(() => {
+    setTagsCloud(state.tagsCloud.map((tag, i) => ({ key: i, tag })));
+  }, [state.tagsCloud]);
   useEffect(() => {
     const filter = Object.keys(tags).filter((key) => tags[key].length > 0);
     const combNum = filter.reduce((prev, key) => prev * tags[key].length, 1);
@@ -78,11 +82,13 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
         Сгенерировать облако тегов
       </Button>
     </Form.Item>
-    <Table dataSource={props.state.tagsCloud.map((tag, i) => ({ key: i, tag }))} columns={[ {
-      title: 'Tag',
-      dataIndex: 'tag',
-      key: 'tag'
-    } ]} showHeader={false}/>
+    <Table dataSource={tagsCloud} columns={[
+      {
+        title: 'Tag',
+        dataIndex: 'tag',
+        key: 'tag'
+      }
+    ]} showHeader={false}/>
   </Form>;
 };
 
