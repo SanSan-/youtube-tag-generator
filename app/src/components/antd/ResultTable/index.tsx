@@ -3,7 +3,7 @@ import React, { ReactElement, useState } from 'react';
 import { isEmptyArray } from '~utils/CommonUtils';
 import Header from '~types/classes/Header';
 import useWindowResize from '~hooks/UseWindowResize';
-import ResizableTitle from '../ResizableTitle';
+import ResizableTitle from '~components/common/ResizableTitle';
 import { EMPTY_FUNC } from '~const/common';
 import { SortType } from '~enums/SortType';
 import { Sort } from '~const/Sort';
