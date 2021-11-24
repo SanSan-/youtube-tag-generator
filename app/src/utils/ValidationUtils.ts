@@ -20,4 +20,4 @@ export const strongSumValidator = (text: string): boolean => STRONG_SUM_MASK.tes
 export const sumOnlyDotsValidator = (text: string): boolean => SUM_ONLY_DOTS_MASK.test(text);
 export const nameValidator = (text: string): boolean => NAME_MASK.test(text);
 export const uuidValidator = (text: string): boolean => UUID_MASK.test(text);
-export const textValidator = (text: string): boolean => text && text.length < 255;
+export const textValidator = (text: string): boolean => text && text.length > 0 && text.length < 255;

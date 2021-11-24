@@ -31,7 +31,7 @@ export const fetchGet = async (
   service: string,
   request: string = EMPTY_STRING
 ): Promise<Either<TimeoutException, Response>> => await wrapFetch(
-  `${SERVER_PATH}${service}${request}`,
+  `${service}${request}`,
   {
     ...initRequestDetail(),
     method: Method.GET
@@ -43,7 +43,7 @@ export const fetchPost = async (
   body: string = EMPTY_STRING,
   headers: Record<string, unknown> = {}
 ): Promise<Either<TimeoutException, Response>> => await wrapFetch(
-  `${SERVER_PATH}${endpoint}`,
+  endpoint,
   {
     ...initRequestDetail(headers),
     method: Method.POST,

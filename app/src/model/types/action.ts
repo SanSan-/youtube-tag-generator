@@ -54,8 +54,9 @@ export interface BreadcrumbAction extends AnyAction {
 }
 
 export interface TagsAction extends AnyAction {
-  binaryData?: number[];
   fileName?: string;
+  binaryData?: number[];
+  stringData?: string;
   tagsCloud?: string[];
 }
 
