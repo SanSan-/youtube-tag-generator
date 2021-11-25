@@ -1,9 +1,14 @@
+import * as backend from '~actions/backend';
 import { TagsAction, ThunkResult } from '~types/action';
 import ActionType from '~enums/module/TagsGenerator';
-import { exportApi } from '~dictionaries/backend';
+import { exportApi, vidIqApi } from '~dictionaries/backend';
 import { exportToExcelAction, parseJsonToCsv } from '~utils/SaveUtils';
 import { getTagsCloud } from '~utils/TagsUtils';
 import { TagCloudItem } from '~types/state';
+import { CompvolObj, VidIqHotterSearchResponse } from '~types/response';
+import { ErrorType } from '~types/dto';
+import { Either } from '@sweet-monads/either';
+import LocalStorageEnum from '~enums/LocalStorage';
 
 export const startToXlsExport = (): TagsAction => ({
   type: ActionType.START_EXPORT_TO_EXCEL
@@ -48,12 +53,33 @@ export const tagsGenerationSuccess = (tagsCloud: string[]): TagsAction => ({
   tagsCloud
 });
 
+export const addStatisticSuccess = (tagStatistic: CompvolObj): TagsAction => ({
+  type: ActionType.ADD_STATISTIC_SUCCESS,
+  tagStatistic
+});
+
 export const startTagsGeneration = (): TagsAction => ({
   type: ActionType.START_TAGS_GENERATION
 });
 
 export const endTagsGeneration = (): TagsAction => ({
   type: ActionType.END_TAGS_GENERATION
+});
+
+export const startCollectStatistic = (): TagsAction => ({
+  type: ActionType.START_LOAD_STATISTIC
+});
+
+const testConnectionSuccess = (): TagsAction => ({
+  type: ActionType.TEST_CONNECTION_SUCCESS
+});
+
+const testConnectionFailed = (): TagsAction => ({
+  type: ActionType.TEST_CONNECTION_FAILED
+});
+
+export const testConnectionRefresh = (): TagsAction => ({
+  type: ActionType.TEST_CONNECTION_REFRESH
 });
 
 export const exportDataToJson = (fileName: string, data: string): ThunkResult<void, TagsAction> => (dispatch) => {
@@ -83,4 +109,46 @@ export const generateTagsCloud = (cloudMap: string[][]): ThunkResult<void, TagsA
   } finally {
     dispatch(endTagsGeneration());
   }
+};
+
+export const testConnection = (jwtToken: string): ThunkResult<Promise<void>, TagsAction> => (dispatch) => (
+  dispatch(backend.executeRequest(vidIqApi('геншин').hotterSearch, {},
+    { headers: { Accept: 'application/json', Authorization: `Bearer ${jwtToken}` }, isGetRequest: true }
+  ))
+    .then((either: Either<ErrorType, VidIqHotterSearchResponse>) => {
+      either.mapRight((response) => {
+        localStorage.setItem(LocalStorageEnum.VID_IQ_JWT_TOKEN, jwtToken);
+        return dispatch(
+          backend.wrapResponse(Object.keys(response.search_stats.compvol).includes('геншин'), testConnectionSuccess(),
+            testConnectionFailed()
+          ));
+      })
+        .mapLeft(() => dispatch(testConnectionFailed()));
+    })
+    // eslint-disable-next-line no-console
+    .catch((response: Error) => console.error(response))
+);
+
+const getStatistic = (tag: string, jwtToken: string): ThunkResult<Promise<void>, TagsAction> => (dispatch) => (
+  dispatch(backend.executeRequest(vidIqApi(tag).hotterSearch, {},
+    { headers: { Accept: 'application/json', Authorization: `Bearer ${jwtToken}` }, isGetRequest: true, spinner: false }
+  ))
+    .then((either: Either<ErrorType, VidIqHotterSearchResponse>) => {
+      either.mapRight((response) => dispatch(
+        backend.wrapResponse(
+          Object.keys(response.search_stats.compvol).includes(tag),
+          addStatisticSuccess(response.search_stats.compvol)
+        )))
+        .mapLeft(() => dispatch(testConnectionFailed()));
+    })
+    // eslint-disable-next-line no-console
+    .catch((response: Error) => console.error(response))
+);
+
+export const collectStatistic = (
+  tagsCloud: string[], jwtToken: string): ThunkResult<void, TagsAction> => (dispatch) => {
+  dispatch(startCollectStatistic());
+  tagsCloud.forEach((tag) => {
+    dispatch(getStatistic(tag, jwtToken));
+  });
 };

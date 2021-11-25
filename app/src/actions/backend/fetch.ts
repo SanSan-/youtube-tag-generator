@@ -4,10 +4,6 @@ import TimeoutException, { timeoutException } from '~exceptions/TimeoutException
 import { EMPTY_STRING } from '~const/common';
 import JsonParsingException, { jsonParsingException } from '~exceptions/JsonParsingException';
 import { JSON_PARSING_ERROR } from '~const/log';
-import UnknownCommunicationException, {
-  unknownCommunicationException
-} from '~exceptions/UnknownCommunicationException';
-import { ExceptionType } from '~types/dto';
 
 const initRequestDetail = (otherHeaders: Record<string, unknown> = {}): RequestInit => ({
   credentials: Credentials.SAME_ORIGIN,
@@ -28,12 +24,12 @@ export const wrapFetch = async (input: RequestInfo, init: RequestInit): Promise<
 };
 
 export const fetchGet = async (
-  service: string,
-  request: string = EMPTY_STRING
+  endpoint: string,
+  headers: Record<string, unknown> = {}
 ): Promise<Either<TimeoutException, Response>> => await wrapFetch(
-  `${service}${request}`,
+  endpoint,
   {
-    ...initRequestDetail(),
+    ...initRequestDetail(headers),
     method: Method.GET
   }
 );
@@ -58,11 +54,4 @@ export const wrapJson = async <T> (response: Response): Promise<Either<JsonParsi
   } catch (e) {
     return left(jsonParsingException(JSON_PARSING_ERROR));
   }
-};
-
-export const wrapFetchJson = async <T> (service: string, request: string = EMPTY_STRING):
-  Promise<Either<UnknownCommunicationException, T>> => {
-  const answer = await fetchGet(service, request);
-  return answer.mapLeft((e: ExceptionType) => unknownCommunicationException(e.message))
-    .asyncChain(async (response: Response): Promise<Either<JsonParsingException, T>> => await wrapJson(response));
 };

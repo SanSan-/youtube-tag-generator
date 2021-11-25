@@ -1,9 +1,15 @@
 import React, { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import { connect } from 'react-redux';
-import { Button, Form, Switch, Table } from 'antd';
-import { DownloadOutlined } from '@ant-design/icons';
+import { Button, Col, Form, message, Progress, Row, Statistic, Switch, Table } from 'antd';
+import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  DownloadOutlined,
+  ExclamationCircleOutlined,
+  YoutubeOutlined
+} from '@ant-design/icons';
 import * as actions from '~actions/module/tagsGenerator';
-import { TagCloudItem, TagsState, TagsType } from '~types/state';
+import { TagCloudItem, TagsState, TagStatisticItem, TagsType } from '~types/state';
 import { GeneralState } from '~types/store';
 import { bindActionCreators } from 'redux';
 import { TagsAction, ThunkResult } from '~types/action';
@@ -12,7 +18,7 @@ import './style.less';
 import EditableTable from '~components/antd/EditableTable';
 import { getTagsCloudMap } from '~utils/TagsUtils';
 import { isEmpty, isEmptyArray } from '~utils/CommonUtils';
-import { tagsCloudHeaders } from '~dictionaries/headers';
+import { tagsCloudHeaders, tagsStatisticHeaders } from '~dictionaries/headers';
 import InputFilter from '~components/antd/InputFilter';
 import FieldIdEnum from '~enums/module/TagsGeneratorFileds';
 import defaultValidators from '~model/states/validators/TagsGenerator';
@@ -31,7 +37,20 @@ interface Props {
   exportDataToCsv: <T extends TagCloudItem> (fileName: string, json: T[]) => ThunkResult<void, TagsAction>;
   exportDataToExcel: <T extends TagCloudItem> (
     fileName: string, json: T[], type: string) => ThunkResult<Promise<void>, TagsAction>;
+  testConnection: (jwtToken: string) => ThunkResult<Promise<void>, TagsAction>;
+  collectStatistic: (tagsCloud: string[], jwtToken: string) => ThunkResult<void, TagsAction>;
 }
+
+const showTestConnectionIcon = (testConnection: string): ReactElement => {
+  switch (testConnection) {
+    case 'success':
+      return <CheckCircleOutlined style={{ color: 'green' }}/>;
+    case 'failed':
+      return <CloseCircleOutlined style={{ color: 'red' }}/>;
+    default:
+      return <ExclamationCircleOutlined style={{ color: 'blue' }}/>;
+  }
+};
 
 const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
   const { state, exportDataToExcel } = props;
@@ -41,10 +60,14 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
   const [tagsCount, setTagsCount] = useState(0);
   const [tagsCloudMap, setTagsCloudMap] = useState([] as string[][]);
   const [tagsCloud, setTagsCloud] = useState([] as TagCloudItem[]);
+  const [tagsStatistic, setTagsStatistic] = useState([] as TagStatisticItem[]);
   const [addTimestamp, setAddTimestamp] = useState(false);
   useEffect(() => {
-    setTagsCloud(state.tagsCloud.map((tag) => ({ tag })));
+    setTagsCloud(state.tagsCloud.map((tag, i) => ({ key: i, tag })));
   }, [state.tagsCloud]);
+  useEffect(() => {
+    setTagsStatistic(state.tagsStatistic.map((item: TagStatisticItem, i: number) => ({ key: i, ...item })));
+  }, [state.tagsStatistic]);
   useEffect(() => {
     const filtered = Object.keys(tags).filter((key) => tags[key].length > 0);
     const combNum = filtered.reduce((prev, key) => prev * tags[key].length, 1);
@@ -78,49 +101,67 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
     handleUpdateFilter(key, value.replace(/ +(?= )/g, EMPTY_STRING), setFilter);
   };
   return <Form
-    labelCol={{ span: 3 }}
-    wrapperCol={{ span: 21 }}
+    labelCol={{ span: 6 }}
+    wrapperCol={{ span: 18 }}
     layout='horizontal'
   >
-    <Form.Item/>
-    <InputFilter
-      id={FieldIdEnum.JWT_TOKEN}
-      value={filter.jwtToken}
-      validatorState={validators.jwtToken}
-      validator={textValidator}
-      errorMessage={TEXT_VALIDATOR}
-      label={{ text: 'JWT Token (VidIQ.com)', labelCol: 3, wrapperCol: 21 }}
-      placeholder={'скопируйте токен для отправки сообщений сюда'}
-      onChange={handleInput}
-      onBlur={validateInput}
-    />
-    <Button>Проверить соединение</Button>
-    <InputFilter
-      id={FieldIdEnum.FILENAME}
-      value={filter.fileName}
-      validatorState={validators.fileName}
-      validator={textValidator}
-      errorMessage={TEXT_VALIDATOR}
-      label={{ text: 'Имя выгружаемого файла', labelCol: 3, wrapperCol: 21 }}
-      placeholder={'придумайте имя файла'}
-      onChange={handleInput}
-      onBlur={validateInput}
-    />
+    <Form.Item>
+      <InputFilter
+        id={FieldIdEnum.JWT_TOKEN}
+        value={filter.jwtToken}
+        validatorState={validators.jwtToken}
+        validator={textValidator}
+        errorMessage={TEXT_VALIDATOR}
+        label={{ text: 'JWT Token (VidIQ.com)', labelCol: 5, wrapperCol: 19 }}
+        placeholder={'скопируйте токен для отправки сообщений сюда'}
+        onChange={handleInput}
+        onBlur={validateInput}
+      />
+      <Button onClick={() => props.testConnection(filter.jwtToken)}>
+        {showTestConnectionIcon(state.testConnection)} Проверить соединение
+      </Button>
+    </Form.Item>
+    <br/>
+    <Form.Item>
+      <InputFilter
+        id={FieldIdEnum.FILENAME}
+        value={filter.fileName}
+        validatorState={validators.fileName}
+        validator={textValidator}
+        errorMessage={TEXT_VALIDATOR}
+        label={{ text: 'Имя выгружаемого файла', labelCol: 5, wrapperCol: 19 }}
+        placeholder={'придумайте имя файла'}
+        onChange={handleInput}
+        onBlur={validateInput}
+      />
+    </Form.Item>
     <Form.Item label={`Добавить в конце временную метку (${EXPORT_DATE_FORMAT})`} valuePropName='checked'
-      labelCol={{ span: 22 }}
-      wrapperCol={{ span: 2 }}>
+      labelCol={{ span: 18 }}
+      wrapperCol={{ span: 6 }}>
       <Switch onChange={() => setAddTimestamp(!addTimestamp)}
         checkedChildren={'да'}
         unCheckedChildren={'нет'}/>
     </Form.Item>
-    <Form.Item label='Ключевые слова'>
+    <Form.Item>
+      Ключевые слова
       <EditableTable onUpdate={(altKeywords) => {
         setTags(altKeywords);
       }}/>
     </Form.Item>
-    <Form.Item>Количество ключевых слов (без синонимов): {JSON.stringify(tagsCount)}</Form.Item>
-    <Form.Item hidden={isEmptyArray(state.tagsCloud)}>Количество комбинаций из ключевых слов: {JSON.stringify(
-      state.tagsCloud.length)}</Form.Item>
+    <br/>
+    <Form.Item>
+      <Row gutter={16}>
+        <Col span={12}>
+          <Statistic title={'Количество ключевых слов (без синонимов)'} value={tagsCount}/>
+        </Col>
+        <Col span={12}>
+          <div hidden={isEmptyArray(state.tagsCloud)}>
+            <Statistic title={'Количество комбинаций из ключевых слов'} value={state.tagsCloud.length}/>
+          </div>
+        </Col>
+      </Row>
+    </Form.Item>
+    <br/>
     <Form.Item label='Сгенерировать все возможные комбинации из ключевых слов'
       labelCol={{ span: 8 }}
       wrapperCol={{ span: 16 }}>
@@ -154,9 +195,55 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
       </Button>
     </Form.Item>
     <br/>
-    <Form.Item hidden={isEmptyArray(state.tagsCloud)}>
+    <Form.Item hidden={isEmptyArray(tagsCloud)}>
       <Table dataSource={tagsCloud} columns={tagsCloudHeaders} showHeader={false}
         size={FORM_ELEM_DEFAULT_SIZE}/>
+    </Form.Item>
+    <Form.Item hidden={isEmptyArray(state.tagsCloud)}>
+      <Button loading={state.isLoadingStatistic}
+        onClick={() => {
+          if (isEmpty(filter.jwtToken) || state.testConnection !== 'success') {
+            message.error('Введите валидный JWT Token (VidIQ.com) или проверьте соединение');
+          } else {
+            props.collectStatistic(state.tagsCloud, filter.jwtToken);
+          }
+        }}>
+        <YoutubeOutlined style={{ color: 'red' }}/> Собрать статистику
+      </Button>
+    </Form.Item>
+    <br/>
+    <Form.Item hidden={!state.isLoadingStatistic}>
+      <Progress
+        percent={isEmptyArray(state.tagsCloud) ? 0 : (state.tagsStatistic.length / state.tagsCloud.length) * 100}/>
+    </Form.Item>
+    <Form.Item hidden={state.isLoadingStatistic || isEmptyArray(tagsStatistic)}>
+      <Table dataSource={tagsStatistic} columns={tagsStatisticHeaders}
+        size={FORM_ELEM_DEFAULT_SIZE}/>
+      <br/>
+      <Button loading={state.isLoadingExportToJson}
+        onClick={() => props.exportDataToJson(
+          `${filter.fileName}.statistic${addTimestamp ? DOT_SIGN + dayjs().format(EXPORT_DATE_FORMAT) : ''}.json`,
+          JSON.stringify(tagsStatistic)
+        )}>
+        <DownloadOutlined/> Выгрузить статистику в JSON
+      </Button>
+      &nbsp;
+      <Button loading={state.isLoadingExportToCsv}
+        onClick={() => props.exportDataToCsv(
+          `${filter.fileName}.statistic${addTimestamp ? DOT_SIGN + dayjs().format(EXPORT_DATE_FORMAT) : ''}.csv`,
+          tagsStatistic
+        )}>
+        <DownloadOutlined/> Выгрузить статистику в CSV
+      </Button>
+      &nbsp;
+      <Button loading={state.isLoadingExportToXls}
+        onClick={() => exportDataToExcel(
+          `${filter.fileName}.statistic${addTimestamp ? DOT_SIGN + dayjs().format(EXPORT_DATE_FORMAT) : ''}.xlsx`,
+          tagsStatistic,
+          'Statistic'
+        )}>
+        <DownloadOutlined/> Выгрузить статистику в Excel
+      </Button>
     </Form.Item>
   </Form>;
 };

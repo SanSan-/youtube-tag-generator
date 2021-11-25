@@ -1,7 +1,7 @@
 import { AnyAction } from 'redux';
 import { Either, left, right } from '@sweet-monads/either';
 import { hideSpinner, showResponseError, showSpinner } from '~actions/common';
-import { fetchPost, wrapJson } from '~actions/backend/fetch';
+import { fetchGet, fetchPost, wrapJson } from '~actions/backend/fetch';
 import { UNAUTHENTICATED_ANSWER } from '~const/settings';
 import Exceptions from '~enums/Exceptions';
 import { ContentType, DispositionType, Headers, ResponseStatus } from '~enums/Http';
@@ -21,6 +21,7 @@ import UnknownCommunicationException from '~exceptions/UnknownCommunicationExcep
 import { ACCESS_DENIED, ENDPOINT_NOT_AVAILABLE, INCORRECT_SERVER_RESULT, UNKNOWN_RESULT } from '~const/log';
 import { AMPERSAND_SIGN, EMPTY_ACTION, EQUAL_SIGN, SPACE_SIGN, ZERO_SIGN } from '~const/common';
 import saveAs from 'file-saver';
+import { parseFileName } from '~utils/SaveUtils';
 
 export const defaultOptions: AsyncOptions = {
   controllerPath: ControllerPath.INVOKE,
@@ -89,9 +90,7 @@ const executeRequestOk = (response: Response, requestOptions: AsyncOptions):
   }
   if (disposition && disposition.includes(DispositionType.ATTACHMENT)) {
     const blob = await response.blob();
-    const startIndex = disposition.indexOf(Headers.FILENAME) + Headers.FILENAME.length;
-    const endIndex = disposition.indexOf(Headers.FILENAME_END);
-    const fileName = disposition.substring(startIndex, endIndex);
+    const fileName = parseFileName(disposition);
     saveAs(new Blob([blob], { type: contentType }), fileName);
     return right(null);
   }
@@ -124,7 +123,8 @@ const handleErrorResponse = (response: Response, text: string): Either<ErrorType
 
 const fetchRequest = (endpoint: string, body: string, options: AsyncOptions):
   ThunkResult<Promise<Either<ErrorType, AnyResponse | unknown>>, AnyAction> => async (dispatch) => {
-  const answer = await fetchPost(endpoint, body, options.headers);
+  const answer = options.isGetRequest ? await fetchGet(endpoint, options.headers) : await fetchPost(
+    endpoint, body, options.headers);
   return answer.asyncChain(async (response) => {
     switch (response.status) {
       case ResponseStatus._200:
@@ -158,16 +158,11 @@ export const executeRequest = <T extends AnyResponse> (
     });
   };
 
-export const wrapResponse = (response: AnyResponse, successAction: AnyAction, errorAction = EMPTY_ACTION):
+export const wrapResponse = (flag: boolean, successAction: AnyAction, errorAction = EMPTY_ACTION):
   ThunkResult<void, AnyAction> => (dispatch) => {
-  if (response.responseStatus !== ResultStatus.SUCCESS) {
-    dispatch(showResponseError(response));
-    if (response.responseStatus === ResultStatus.WARNING) {
-      dispatch(successAction);
-    } else {
-      dispatch(errorAction);
-    }
-  } else {
+  if (flag) {
     dispatch(successAction);
+  } else {
+    dispatch(errorAction);
   }
 };

@@ -13,7 +13,10 @@ enum TagsGenerator {
   TAGS_GENERATION_SUCCESS = '@@module/tags-generator/TAGS_GENERATION_SUCCESS',
   START_LOAD_STATISTIC = '@@module/tags-generator/START_LOAD_STATISTIC',
   END_LOAD_STATISTIC = '@@module/tags-generator/END_LOAD_STATISTIC',
-  LOAD_STATISTIC_SUCCESS = '@@module/tags-generator/LOAD_STATISTIC_SUCCESS',
+  ADD_STATISTIC_SUCCESS = '@@module/tags-generator/ADD_STATISTIC_SUCCESS',
+  TEST_CONNECTION_SUCCESS = '@@module/tags-generator/TEST_CONNECTION_SUCCESS',
+  TEST_CONNECTION_FAILED = '@@module/tags-generator/TEST_CONNECTION_FAILED',
+  TEST_CONNECTION_REFRESH = '@@module/tags-generator/TEST_CONNECTION_REFRESH',
   INIT = '@@module/tags-generator/INIT'
 }
 

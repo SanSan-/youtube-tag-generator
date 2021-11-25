@@ -4,9 +4,12 @@ import { TagsAction } from '~types/action';
 import produce from 'immer';
 import { saveStringAsFile } from '~utils/SaveUtils';
 import { ContentType } from '~enums/Http';
+import { CompvolObj } from '~types/response';
 
 export const initialState: TagsState = {
   tagsCloud: [],
+  tagsStatistic: [],
+  testConnection: null,
   isLoadingExportToJson: false,
   isLoadingExportToCsv: false,
   isLoadingExportToXls: false,
@@ -55,12 +58,28 @@ const endGeneration = (draft: TagsState): TagsState => {
 };
 
 const startLoadStatistic = (draft: TagsState): TagsState => {
+  draft.tagsStatistic = [];
   draft.isLoadingStatistic = true;
   return draft;
 };
 
 const endLoadStatistic = (draft: TagsState): TagsState => {
   draft.isLoadingStatistic = false;
+  return draft;
+};
+
+const testConnectionSuccess = (draft: TagsState): TagsState => {
+  draft.testConnection = 'success';
+  return draft;
+};
+
+const testConnectionFailed = (draft: TagsState): TagsState => {
+  draft.testConnection = 'failed';
+  return draft;
+};
+
+const testConnectionRefresh = (draft: TagsState): TagsState => {
+  draft.testConnection = null;
   return draft;
 };
 
@@ -84,7 +103,17 @@ const generationSuccess = (draft: TagsState, data: string[]): TagsState => {
   return endGeneration(draft);
 };
 
-const loadStatisticSuccess = (draft: TagsState): TagsState => endLoadStatistic(draft);
+const addStatisticSuccess = (state: TagsState, draft: TagsState, compvol: CompvolObj): TagsState => {
+  Object.keys(compvol).forEach((tag) => {
+    draft.tagsStatistic.push({
+      tag,
+      volume: compvol[tag].estimated_monthly_search,
+      competition: compvol[tag].competition / 100,
+      rank: compvol[tag].overall / 100
+    });
+  });
+  return state.tagsCloud.length < draft.tagsStatistic.length + 2 ? endLoadStatistic(draft) : draft;
+};
 
 const tagsGenerator = (state: TagsState = initialState, action: TagsAction): TagsState =>
   produce(state, (draft: TagsState): TagsState => {
@@ -95,8 +124,8 @@ const tagsGenerator = (state: TagsState = initialState, action: TagsAction): Tag
         return startGeneration(draft);
       case ActionType.END_TAGS_GENERATION:
         return endGeneration(draft);
-      case ActionType.LOAD_STATISTIC_SUCCESS:
-        return loadStatisticSuccess(draft);
+      case ActionType.ADD_STATISTIC_SUCCESS:
+        return addStatisticSuccess(state, draft, action.tagStatistic);
       case ActionType.START_LOAD_STATISTIC:
         return startLoadStatistic(draft);
       case ActionType.END_LOAD_STATISTIC:
@@ -119,6 +148,12 @@ const tagsGenerator = (state: TagsState = initialState, action: TagsAction): Tag
         return startExportToXls(draft);
       case ActionType.END_EXPORT_TO_EXCEL:
         return endExportToXls(draft);
+      case ActionType.TEST_CONNECTION_SUCCESS:
+        return testConnectionSuccess(draft);
+      case ActionType.TEST_CONNECTION_FAILED:
+        return testConnectionFailed(draft);
+      case ActionType.TEST_CONNECTION_REFRESH:
+        return testConnectionRefresh(draft);
       case ActionType.INIT:
         return initialState;
       default:
