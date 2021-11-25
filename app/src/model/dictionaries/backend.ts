@@ -1,3 +1,3 @@
 export const exportApi = {
-  toExcel: '/export/excel'
+  toExcel: `${SERVER_PATH}/export/excel`
 };

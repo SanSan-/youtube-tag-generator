@@ -1,5 +1,6 @@
 import { isEmptyArray } from '~utils/CommonUtils';
 import { SPACE_SIGN } from '~const/common';
+import { StringBiRecordType } from '~types/dto';
 
 export const getTagsCloudMap = (keywords: string[][], combNum: number): string[][] => {
   let temp = [] as string[][];
@@ -42,14 +43,17 @@ export const getTagsCloud = (cloudMap: string[][]): string[] => {
     prev = temp;
     cloud = [...cloud, ...temp];
   }
-  let result = [] as string[];
+  let result = {} as StringBiRecordType;
   for (let i = 0; i < cloudMap.length; i++) {
     const curr = cloudMap[i];
-    result = [
+    result = {
       ...result,
       ...cloud.reduce(
-        (arr: string[], idxList: number[]) => ([...arr, ...idxList.map((idx) => (curr[idx])).join(SPACE_SIGN)]), [])
-    ];
+        (obj: StringBiRecordType, idxList: number[]) => ({
+          ...obj,
+          [idxList.map((idx) => (curr[idx])).join(SPACE_SIGN)]: null
+        }), {})
+    };
   }
-  return result;
+  return Object.keys(result);
 };

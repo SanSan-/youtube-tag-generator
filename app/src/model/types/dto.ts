@@ -28,3 +28,7 @@ export interface ActionResponse extends DefaultState {
   isSuccess?: boolean;
   message?: string;
 }
+
+export type BiRecordType<T extends string | number | symbol> = Record<T, T>;
+
+export type StringBiRecordType = BiRecordType<string>;

@@ -2,6 +2,7 @@ import { ReactElement } from 'react';
 
 export default class Header {
   readonly title: string | ReactElement;
+  readonly key: string;
   readonly dataIndex: string;
   readonly width: number;
   readonly colSpan?: number;
@@ -21,6 +22,7 @@ export default class Header {
   ) {
     this.title = title;
     this.dataIndex = dataIndex;
+    this.key = dataIndex;
     this.width = width;
     this.colSpan = colSpan;
     this.className = className;

@@ -5,6 +5,7 @@ import EditableRow from '~components/antd/EditableRow';
 import EditableCell from '~components/antd/EditableCell';
 import KeyWordGenerator from '~forms/KeyWordGenerator';
 import { ColumnTypes, DataType, EditableTableProps, EditableTableState, TagsType } from '~types/state';
+import { isEmptyArray } from '~utils/CommonUtils';
 
 interface Props extends EditableTableProps {
   onUpdate: (tags: TagsType) => void;
@@ -119,14 +120,16 @@ class EditableTable extends React.Component<Props, EditableTableState> {
           style={{ marginBottom: 16, alignItems: 'end' }}>
           очистить всё
         </a>
-        <Table
-          components={components}
-          rowClassName={() => 'editable-row'}
-          dataSource={dataSource}
-          columns={columns as ColumnTypes}
-          showHeader={false}
-          pagination={false}
-        />
+        <div hidden={isEmptyArray(this.state.dataSource)}>
+          <Table
+            components={components}
+            rowClassName={() => 'editable-row'}
+            dataSource={dataSource}
+            columns={columns as ColumnTypes}
+            showHeader={false}
+            pagination={false}
+          />
+        </div>
       </div>
     );
   }

@@ -87,12 +87,12 @@ const executeRequestOk = (response: Response, requestOptions: AsyncOptions):
   if (requestOptions.controllerPath === ControllerPath.DOWNLOAD) {
     return right(response);
   }
-  if (disposition && disposition.indexOf(DispositionType.ATTACHMENT) !== -1) {
-    const text = await response.text();
+  if (disposition && disposition.includes(DispositionType.ATTACHMENT)) {
+    const blob = await response.blob();
     const startIndex = disposition.indexOf(Headers.FILENAME) + Headers.FILENAME.length;
-    const endIndex = disposition.length;
+    const endIndex = disposition.indexOf(Headers.FILENAME_END);
     const fileName = disposition.substring(startIndex, endIndex);
-    saveAs(new File([text], fileName, { type: ContentType.PLAIN }), fileName);
+    saveAs(new Blob([blob], { type: contentType }), fileName);
     return right(null);
   }
   const json = await wrapJson<AnyResponse>(response);

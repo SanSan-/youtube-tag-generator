@@ -89,13 +89,20 @@ export interface BreadcrumbState extends DefaultStringState {
 }
 
 export interface TagCloudItem extends DefaultState {
-  key: number;
   tag: string;
+}
+
+export interface TagStatisticItem extends TagCloudItem {
+  volume: number;
+  competition: number;
+  rank: number;
 }
 
 export interface TagsState extends DefaultState {
   tagsCloud?: string[];
-  isLoadingExport?: boolean;
+  isLoadingExportToJson?: boolean;
+  isLoadingExportToCsv?: boolean;
+  isLoadingExportToXls?: boolean;
   isLoadingGeneration?: boolean;
   isLoadingStatistic?: boolean;
 }

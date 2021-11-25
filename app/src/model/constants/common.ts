@@ -22,6 +22,7 @@ export const ZERO_SIGN = '0';
 export const FORM_ELEMENT_SIZE = 'small';
 
 export const DATE_FORMAT = 'DD.MM.YYYY';
+export const EXPORT_DATE_FORMAT = 'YYYY-MM-DD_HH_mm_ss';
 export const ANT_DATE_FORMAT = 'YYYY-MM-DD';
 
 export const EMPTY_FUNC = (): void => {

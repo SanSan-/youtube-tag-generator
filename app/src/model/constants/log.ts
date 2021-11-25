@@ -18,3 +18,5 @@ export const LOGGED_OUT = 'Logged out';
 export const PASSWORD_EXPIRED = 'Password expired! Need change';
 export const PASSWORD_CHANGED_SUCCESSFUL = 'Password changed successful';
 export const SEARCH_ERROR = 'Search is impossible! Some fields has errors!';
+
+export const TEXT_VALIDATOR = 'Поле не может быть пустым';
