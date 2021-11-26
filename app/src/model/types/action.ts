@@ -3,6 +3,7 @@ import { AnyAction } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 import { GeneralState } from '~types/store';
 import { ActionResponse, Spinner } from '~types/dto';
+import { CompvolObj } from '~types/response';
 
 export interface GetStateAction {
   (): GeneralState;
@@ -22,6 +23,7 @@ export interface AsyncAction {
 export interface AsyncOptions extends AsyncAction {
   controllerPath?: string;
   headers?: Record<string, unknown>;
+  isGetRequest?: boolean;
 }
 
 export interface RequestAction extends AnyAction {
@@ -58,10 +60,11 @@ export interface TagsAction extends AnyAction {
   binaryData?: number[];
   stringData?: string;
   tagsCloud?: string[];
+  tagStatistic?: CompvolObj;
 }
 
 export interface SendActionResponseAction extends AnyAction {
-  responses?: ActionResponse[]
+  responses?: ActionResponse[];
 }
 
 export interface SaveFileResponseAction extends SendActionResponseAction {

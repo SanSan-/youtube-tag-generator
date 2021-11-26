@@ -89,6 +89,7 @@ export interface BreadcrumbState extends DefaultStringState {
 }
 
 export interface TagCloudItem extends DefaultState {
+  key?: number;
   tag: string;
 }
 
@@ -98,8 +99,12 @@ export interface TagStatisticItem extends TagCloudItem {
   rank: number;
 }
 
+export type ConnectionState = 'success' | 'failed' | null;
+
 export interface TagsState extends DefaultState {
   tagsCloud?: string[];
+  tagsStatistic?: TagStatisticItem[];
+  testConnection?: ConnectionState;
   isLoadingExportToJson?: boolean;
   isLoadingExportToCsv?: boolean;
   isLoadingExportToXls?: boolean;

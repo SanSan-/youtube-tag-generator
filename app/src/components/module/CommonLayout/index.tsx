@@ -27,8 +27,9 @@ export const CommonContext = React.createContext(defaultValue);
 const CommonLayout: React.FC<Props> = ({ background, children }: Props): ReactElement =>
   <div style={{ background: `url(${background ? bg : null})` }} id='main_layout'>
     <Dialog/>
-    {React.Children.only(children)}
-    <Spinner id={SpinnerEnum.ID as string}/>
+    <Spinner id={SpinnerEnum.ID as string}>
+      {React.Children.only(children)}
+    </Spinner>
   </div>;
 
 export default connect((state: GeneralState) => ({

@@ -9,17 +9,16 @@ const loading = <LoadingOutlined style={{ fontSize: 48 }} spin/>;
 
 interface Props {
   id: string;
+  children?: Array<ReactElement> | ReactElement;
   spinners?: Record<string, SpinnerState>;
   dialogs?: PromiseDialog[];
 }
 
-const Spinner: React.FC<Props> = ({ id, dialogs, spinners }: Props): ReactElement => {
+const Spinner: React.FC<Props> = ({ id, children, dialogs, spinners }: Props): ReactElement => {
   const visible = spinners[id] && spinners[id].counter > 0 && dialogs.length === 0;
   const message = spinners[id] && spinners[id].message || null;
-
-  return <div hidden={!visible} style={{ textAlign: 'center' }}>
-    <Spin indicator={loading} tip={message}/>
-  </div>;
+  return <Spin spinning={!!visible} indicator={loading} tip={message}
+    style={{ textAlign: 'center' }}>{children}</Spin>;
 };
 
 export default connect((state: GeneralState) => ({

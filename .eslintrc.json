@@ -47,12 +47,7 @@
       2,
       "1tbs"
     ],
-    "camelcase": [
-      2,
-      {
-        "properties": "never"
-      }
-    ],
+    "camelcase": 0,
     "comma-dangle": [
       2,
       "never"
