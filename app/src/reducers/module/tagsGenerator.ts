@@ -9,6 +9,7 @@ import { CompvolObj } from '~types/response';
 export const initialState: TagsState = {
   tagsCloud: [],
   tagsStatistic: [],
+  tagsStatisticCount: 0,
   testConnection: null,
   isLoadingExportToJson: false,
   isLoadingExportToCsv: false,
@@ -57,10 +58,15 @@ const endGeneration = (draft: TagsState): TagsState => {
   return draft;
 };
 
-const startLoadStatistic = (draft: TagsState): TagsState => {
+const refreshStatistic = (draft: TagsState): TagsState => {
+  draft.tagsStatisticCount = 0;
   draft.tagsStatistic = [];
-  draft.isLoadingStatistic = true;
   return draft;
+};
+
+const startLoadStatistic = (draft: TagsState): TagsState => {
+  draft.isLoadingStatistic = true;
+  return refreshStatistic(draft);
 };
 
 const endLoadStatistic = (draft: TagsState): TagsState => {
@@ -103,6 +109,11 @@ const generationSuccess = (draft: TagsState, data: string[]): TagsState => {
   return endGeneration(draft);
 };
 
+const incStatisticCounter = (state: TagsState, draft: TagsState): TagsState => {
+  draft.tagsStatisticCount += 1;
+  return state.tagsCloud.length < draft.tagsStatisticCount + 2 ? endLoadStatistic(draft) : draft;
+};
+
 const addStatisticSuccess = (state: TagsState, draft: TagsState, compvol: CompvolObj): TagsState => {
   Object.keys(compvol).forEach((tag) => {
     draft.tagsStatistic.push({
@@ -112,10 +123,12 @@ const addStatisticSuccess = (state: TagsState, draft: TagsState, compvol: Compvo
       rank: compvol[tag].overall / 100
     });
   });
-  return state.tagsCloud.length < draft.tagsStatistic.length + 2 ? endLoadStatistic(draft) : draft;
+  return incStatisticCounter(state, draft);
 };
 
 const tagsGenerator = (state: TagsState = initialState, action: TagsAction): TagsState =>
+// TODO: decomposition switch
+// eslint-disable-next-line complexity
   produce(state, (draft: TagsState): TagsState => {
     switch (action.type) {
       case ActionType.TAGS_GENERATION_SUCCESS:
@@ -130,6 +143,10 @@ const tagsGenerator = (state: TagsState = initialState, action: TagsAction): Tag
         return startLoadStatistic(draft);
       case ActionType.END_LOAD_STATISTIC:
         return endLoadStatistic(draft);
+      case ActionType.INCREMENT_STATISTIC_COUNT:
+        return incStatisticCounter(state, draft);
+      case ActionType.REFRESH_STATISTIC_COUNT:
+        return refreshStatistic(draft);
       case ActionType.EXPORT_TO_JSON_SUCCESS:
         return exportToJsonSuccess(draft, action.stringData, action.fileName);
       case ActionType.START_EXPORT_TO_JSON:

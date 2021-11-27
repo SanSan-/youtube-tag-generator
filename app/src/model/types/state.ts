@@ -105,6 +105,7 @@ export interface TagsState extends DefaultState {
   tagsCloud?: string[];
   tagsStatistic?: TagStatisticItem[];
   testConnection?: ConnectionState;
+  tagsStatisticCount?: number;
   isLoadingExportToJson?: boolean;
   isLoadingExportToCsv?: boolean;
   isLoadingExportToXls?: boolean;

@@ -14,6 +14,8 @@ enum TagsGenerator {
   START_LOAD_STATISTIC = '@@module/tags-generator/START_LOAD_STATISTIC',
   END_LOAD_STATISTIC = '@@module/tags-generator/END_LOAD_STATISTIC',
   ADD_STATISTIC_SUCCESS = '@@module/tags-generator/ADD_STATISTIC_SUCCESS',
+  INCREMENT_STATISTIC_COUNT = '@@module/tags-generator/INCREMENT_STATISTIC_COUNT',
+  REFRESH_STATISTIC_COUNT = '@@module/tags-generator/REFRESH_STATISTIC_COUNT',
   TEST_CONNECTION_SUCCESS = '@@module/tags-generator/TEST_CONNECTION_SUCCESS',
   TEST_CONNECTION_FAILED = '@@module/tags-generator/TEST_CONNECTION_FAILED',
   TEST_CONNECTION_REFRESH = '@@module/tags-generator/TEST_CONNECTION_REFRESH',

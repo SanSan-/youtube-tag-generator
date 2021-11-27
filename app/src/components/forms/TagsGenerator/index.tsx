@@ -214,7 +214,8 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
     <br/>
     <Form.Item hidden={!state.isLoadingStatistic}>
       <Progress
-        percent={isEmptyArray(state.tagsCloud) ? 0 : (state.tagsStatistic.length / state.tagsCloud.length) * 100}/>
+        percent={state.tagsStatisticCount > 0 ? Math.round((state.tagsStatisticCount / state.tagsCloud.length) * 100) :
+          0}/>
     </Form.Item>
     <Form.Item hidden={state.isLoadingStatistic || isEmptyArray(tagsStatistic)}>
       <Table dataSource={tagsStatistic} columns={tagsStatisticHeaders}
