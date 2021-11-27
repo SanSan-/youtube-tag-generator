@@ -1,6 +1,6 @@
 import React, { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import { connect } from 'react-redux';
-import { Button, Col, Form, message, Progress, Row, Statistic, Switch, Table } from 'antd';
+import { Button, Col, Form, message, Progress, Rate, Row, Statistic, Switch, Table } from 'antd';
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -9,7 +9,7 @@ import {
   YoutubeOutlined
 } from '@ant-design/icons';
 import * as actions from '~actions/module/tagsGenerator';
-import { TagCloudItem, TagsState, TagStatisticItem, TagsType } from '~types/state';
+import { TagCloudItem, TagsState, TagStatisticItem, TagStatisticTableData, TagsType } from '~types/state';
 import { GeneralState } from '~types/store';
 import { bindActionCreators } from 'redux';
 import { TagsAction, ThunkResult } from '~types/action';
@@ -26,9 +26,11 @@ import defaultFilter from '~model/states/filters/TagsGenerator';
 import { textValidator } from '~utils/ValidationUtils';
 import { TEXT_VALIDATOR } from '~const/log';
 import { createSetValidator, handleUpdateFilter } from '~utils/FilterUtils';
-import { DOT_SIGN, EMPTY_STRING, EXPORT_DATE_FORMAT } from '~const/common';
+import { DOT_SIGN, EMPTY_STRING, EXPORT_DATE_FORMAT, SPACE_SIGN } from '~const/common';
 import ValidationStatus from '~enums/ValidationStatus';
 import { FORM_ELEM_DEFAULT_SIZE } from '~const/settings';
+import { COMP_OPTIONS } from '~dictionaries/options';
+import ResultTable from '~components/antd/ResultTable';
 
 interface Props {
   state: TagsState;
@@ -60,13 +62,20 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
   const [tagsCount, setTagsCount] = useState(0);
   const [tagsCloudMap, setTagsCloudMap] = useState([] as string[][]);
   const [tagsCloud, setTagsCloud] = useState([] as TagCloudItem[]);
-  const [tagsStatistic, setTagsStatistic] = useState([] as TagStatisticItem[]);
+  const [tagsStatistic, setTagsStatistic] = useState([] as TagStatisticTableData[]);
   const [addTimestamp, setAddTimestamp] = useState(false);
   useEffect(() => {
     setTagsCloud(state.tagsCloud.map((tag, i) => ({ key: i, tag })));
   }, [state.tagsCloud]);
   useEffect(() => {
-    setTagsStatistic(state.tagsStatistic.map((item: TagStatisticItem, i: number) => ({ key: i, ...item })));
+    setTagsStatistic(state.tagsStatistic.map(
+      (item: TagStatisticItem, i: number) => ({
+        key: i,
+        tag: item.tag,
+        volume: <Statistic groupSeparator={SPACE_SIGN} precision={0} value={item.volume}/>,
+        competition: COMP_OPTIONS[Math.ceil(item.competition * 5) - 1],
+        rank: <Rate disabled allowHalf defaultValue={item.rank * 5}/>
+      })));
   }, [state.tagsStatistic]);
   useEffect(() => {
     const filtered = Object.keys(tags).filter((key) => tags[key].length > 0);
@@ -218,13 +227,12 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
           0}/>
     </Form.Item>
     <Form.Item hidden={state.isLoadingStatistic || isEmptyArray(tagsStatistic)}>
-      <Table dataSource={tagsStatistic} columns={tagsStatisticHeaders}
-        size={FORM_ELEM_DEFAULT_SIZE}/>
+      <ResultTable data={tagsStatistic} headers={tagsStatisticHeaders}/>
       <br/>
       <Button loading={state.isLoadingExportToJson}
         onClick={() => props.exportDataToJson(
           `${filter.fileName}.statistic${addTimestamp ? DOT_SIGN + dayjs().format(EXPORT_DATE_FORMAT) : ''}.json`,
-          JSON.stringify(tagsStatistic)
+          JSON.stringify(state.tagsStatistic)
         )}>
         <DownloadOutlined/> Выгрузить статистику в JSON
       </Button>
@@ -232,7 +240,7 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
       <Button loading={state.isLoadingExportToCsv}
         onClick={() => props.exportDataToCsv(
           `${filter.fileName}.statistic${addTimestamp ? DOT_SIGN + dayjs().format(EXPORT_DATE_FORMAT) : ''}.csv`,
-          tagsStatistic
+          state.tagsStatistic
         )}>
         <DownloadOutlined/> Выгрузить статистику в CSV
       </Button>
@@ -240,7 +248,7 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
       <Button loading={state.isLoadingExportToXls}
         onClick={() => exportDataToExcel(
           `${filter.fileName}.statistic${addTimestamp ? DOT_SIGN + dayjs().format(EXPORT_DATE_FORMAT) : ''}.xlsx`,
-          tagsStatistic,
+          state.tagsStatistic,
           'Statistic'
         )}>
         <DownloadOutlined/> Выгрузить статистику в Excel

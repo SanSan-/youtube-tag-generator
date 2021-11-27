@@ -8,18 +8,14 @@ import { EMPTY_FUNC } from '~const/common';
 import { SortType } from '~enums/SortType';
 import { Sort } from '~const/Sort';
 import { Key, SortOrder, TablePaginationConfig, TableRowSelection } from 'antd/lib/table/interface';
+import { FORM_ELEM_DEFAULT_SIZE } from '~const/settings';
 
 interface Props {
   data?: Array<Record<string, unknown>>;
   defaultExpandAllRows?: boolean;
   headers?: Array<Header>;
-  totalRecords?: number;
-  page?: number;
-  pageSize?: number;
-  pageSizeOptions?: Array<string>;
   callback?: (currentPage: number, pageSize: number, newSortKey: string, newSortType: string) => void;
   rowSelection?: TableRowSelection<unknown>;
-  showPagination?: boolean;
   style?: React.CSSProperties;
 }
 
@@ -34,8 +30,12 @@ const initialSortedInfo: SortedInfoType = {
 };
 
 const ResultTable: React.FC<Props> = ({
-  data, defaultExpandAllRows, headers, page, pageSize, rowSelection,
-  pageSizeOptions, totalRecords, callback, showPagination, style
+  data,
+  defaultExpandAllRows,
+  headers,
+  rowSelection,
+  callback,
+  style
 }: Props): ReactElement => {
   const [state, setState] = useState({
     columns: headers,
@@ -74,21 +74,16 @@ const ResultTable: React.FC<Props> = ({
     callback(current, newPageSize, column ? column.sortName : null, Sort[order] || SortType.NONE as string);
   };
   return isEmptyArray(dataSource) ? null : (
-    <Table columns={columns} dataSource={dataSource} defaultExpandAllRows={defaultExpandAllRows}
+    <Table columns={columns} dataSource={dataSource} expandable={{ defaultExpandAllRows }}
       style={{ whiteSpace: 'pre-wrap', maxWidth: windowSize.width - 125, ...style }}
-      components={components}
+      components={components} size={FORM_ELEM_DEFAULT_SIZE}
       scroll={state.tableWidth > windowSize.width - 125 ? { x: state.tableWidth } : {}}
       rowSelection={rowSelection}
-      onChange={handleChange}
-      pagination={showPagination ? {
-        current: page + 1, pageSize, total: totalRecords, style: { float: 'left' }, pageSizeOptions,
-        showSizeChanger: !isEmptyArray(pageSizeOptions),
-        showTotal: (total, range): string => `Show records from ${range[0]} to ${range[1]} of ${total}`
-      } : false}/>);
+      onChange={handleChange}/>);
 };
 
 ResultTable.defaultProps = {
-  showPagination: true,
+  defaultExpandAllRows: true,
   rowSelection: null
 };
 
