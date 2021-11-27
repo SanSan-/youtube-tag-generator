@@ -82,6 +82,14 @@ export const testConnectionRefresh = (): TagsAction => ({
   type: ActionType.TEST_CONNECTION_REFRESH
 });
 
+const incStatisticCounter = (): TagsAction => ({
+  type: ActionType.INCREMENT_STATISTIC_COUNT
+});
+
+export const refreshStatisticCounter = (): TagsAction => ({
+  type: ActionType.REFRESH_STATISTIC_COUNT
+});
+
 export const exportDataToJson = (fileName: string, data: string): ThunkResult<void, TagsAction> => (dispatch) => {
   dispatch(startToJsonExport());
   dispatch(exportToJsonSuccess(data, fileName));
@@ -137,7 +145,8 @@ const getStatistic = (tag: string, jwtToken: string): ThunkResult<Promise<void>,
       either.mapRight((response) => dispatch(
         backend.wrapResponse(
           Object.keys(response.search_stats.compvol).includes(tag),
-          addStatisticSuccess(response.search_stats.compvol)
+          addStatisticSuccess(response.search_stats.compvol),
+          incStatisticCounter()
         )))
         .mapLeft(() => dispatch(testConnectionFailed()));
     })
