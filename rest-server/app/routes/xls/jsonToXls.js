@@ -14,7 +14,7 @@ const convertJsonToXls = (type, jsonArr, headers, condFormat) => {
         rules: format.rules
       });
     });
-    jsonArr.forEach((row) => {
+    jsonArr && jsonArr.forEach((row) => {
       worksheet.addRow(row);
     });
   }

@@ -109,7 +109,7 @@ const KeyWordGenerator: React.FC<Props> = ({ index, initTags, onChange }: Props)
         />
       )}
       {!inputVisible && (
-        <Tag visible={tags && tags.length < 6} className='site-tag-plus' onClick={showInput}>
+        <Tag visible={tags && tags.length < 10} className='site-tag-plus' onClick={showInput}>
           <PlusOutlined/> {tags && tags.length === 0 ? 'новый тег' : 'синоним'}
         </Tag>
       )}
