@@ -5,8 +5,8 @@ export const tagsCloudHeaders: Array<Header> = [
 ];
 
 export const tagsStatisticHeaders: Array<Header> = [
-  new Header('Тег', 'tag'),
-  new Header('Поисковый объём', 'volume'),
-  new Header('Конкуренция', 'competition'),
-  new Header('Оценка', 'rank')
+  new Header('Тег', 'tag', 350),
+  new Header('Поисковый объём', 'volume', 125),
+  new Header('Конкуренция', 'competition', 125),
+  new Header('Оценка', 'rank', 125)
 ];

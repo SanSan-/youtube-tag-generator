@@ -99,6 +99,12 @@ export interface TagStatisticItem extends TagCloudItem {
   rank: number;
 }
 
+export interface TagStatisticTableData extends TagCloudItem {
+  volume: ReactElement;
+  competition: ReactElement;
+  rank: ReactElement;
+}
+
 export type ConnectionState = 'success' | 'failed' | null;
 
 export interface TagsState extends DefaultState {
