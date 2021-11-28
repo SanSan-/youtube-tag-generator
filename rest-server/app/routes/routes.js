@@ -8,10 +8,11 @@ module.exports = (app) => {
     const type = req.body.type.toString().replace(/"/gi, '');
     const jsonArr = JSON.parse(req.body.json);
     const headers = JSON.parse(req.body.headers);
+    const conditionalFormatting = JSON.parse(req.body.conditionalFormatting);
     res.status(200);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', contentDisposition(fileName));
-    jsonToXls.convertJsonToXls(jsonArr, headers, type).xlsx.write(res)
+    jsonToXls.convertJsonToXls(type, jsonArr, headers, conditionalFormatting).xlsx.write(res)
       .then(function () {
         res.end();
       });

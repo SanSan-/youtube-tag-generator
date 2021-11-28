@@ -31,7 +31,7 @@ import ValidationStatus from '~enums/ValidationStatus';
 import { FORM_ELEM_DEFAULT_SIZE } from '~const/settings';
 import { COMP_OPTIONS } from '~dictionaries/options';
 import ResultTable from '~components/antd/ResultTable';
-import { statisticTableHeaders, tagsTableHeaders } from '~dictionaries/tableHeaders';
+import { statisticCondFormat, statisticTableHeaders, tagsTableHeaders } from '~dictionaries/tableHeaders';
 
 interface Props {
   state: TagsState;
@@ -39,7 +39,8 @@ interface Props {
   exportDataToJson: (fileName: string, data: string) => ThunkResult<void, TagsAction>;
   exportDataToCsv: <T extends TagCloudItem> (fileName: string, json: T[]) => ThunkResult<void, TagsAction>;
   exportDataToExcel: <T extends TagCloudItem> (
-    fileName: string, json: T[], type: string, headers?: Record<string, unknown>[]
+    fileName: string, json: T[], type: string, headers: Record<string, unknown>[],
+    conditionalFormatting?: Record<string, unknown>[]
   ) => ThunkResult<Promise<void>, TagsAction>;
   testConnection: (jwtToken: string) => ThunkResult<Promise<void>, TagsAction>;
   collectStatistic: (tagsCloud: string[], jwtToken: string) => ThunkResult<void, TagsAction>;
@@ -253,7 +254,8 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
           `${filter.fileName}.statistic${addTimestamp ? DOT_SIGN + dayjs().format(EXPORT_DATE_FORMAT) : ''}.xlsx`,
           state.tagsStatistic,
           'Statistic',
-          statisticTableHeaders
+          statisticTableHeaders,
+          statisticCondFormat
         )}>
         <DownloadOutlined/> Выгрузить статистику в Excel
       </Button>
