@@ -106,8 +106,14 @@ export const exportDataToCsv = <T extends TagCloudItem> (
   };
 
 export const exportDataToExcel = <T extends TagCloudItem> (
-  fileName: string, json: T[], type: string): ThunkResult<Promise<void>, TagsAction> => exportToExcelAction(
-    { fileName, json, type }, exportApi.toExcel, startToXlsExport, endToXlsExport);
+  fileName: string,
+  json: T[],
+  type: string,
+  headers: Record<string, unknown>[] = null
+): ThunkResult<Promise<void>, TagsAction> => exportToExcelAction(
+    headers ? { fileName, json, headers, type } : { fileName, json, type }, exportApi.toExcel, startToXlsExport,
+    endToXlsExport
+  );
 
 export const generateTagsCloud = (cloudMap: string[][]): ThunkResult<void, TagsAction> => (dispatch) => {
   dispatch(startTagsGeneration());
