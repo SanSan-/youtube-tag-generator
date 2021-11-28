@@ -1,6 +1,6 @@
 import React, { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import { connect } from 'react-redux';
-import { Button, Col, Form, message, Progress, Rate, Row, Statistic, Switch, Table } from 'antd';
+import { Button, Col, Form, message, Progress, Rate, Row, Statistic, Switch, Table, Tooltip } from 'antd';
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -43,17 +43,24 @@ interface Props {
     conditionalFormatting?: Record<string, unknown>[]
   ) => ThunkResult<Promise<void>, TagsAction>;
   testConnection: (jwtToken: string) => ThunkResult<Promise<void>, TagsAction>;
+  testConnectionRefresh: () => TagsAction;
   collectStatistic: (tagsCloud: string[], jwtToken: string) => ThunkResult<void, TagsAction>;
 }
 
 const showTestConnectionIcon = (testConnection: string): ReactElement => {
   switch (testConnection) {
     case 'success':
-      return <CheckCircleOutlined style={{ color: 'green' }}/>;
+      return <Tooltip placement='right' title={'Успешное соединение'} color={'green'}>
+        <CheckCircleOutlined style={{ color: 'green' }}/>
+      </Tooltip>;
     case 'failed':
-      return <CloseCircleOutlined style={{ color: 'red' }}/>;
+      return <Tooltip placement='right' title={'Ошибка соединения'} color={'red'}>
+        <CloseCircleOutlined style={{ color: 'red' }}/>
+      </Tooltip>;
     default:
-      return <ExclamationCircleOutlined style={{ color: 'blue' }}/>;
+      return <Tooltip placement='right' title={'Проверить соединение?'} color={'blue'}>
+        <ExclamationCircleOutlined style={{ color: 'blue' }}/>
+      </Tooltip>;
   }
 };
 
@@ -105,13 +112,15 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
       setValidator(key, ValidationStatus.ERROR, errorMessage);
     }
   };
-  const handleInput = (key: string) => (e: ChangeEvent<HTMLInputElement>): void => {
-    const value = e.target.value;
-    if (isEmpty(value)) {
-      setValidator(key, null, EMPTY_STRING);
-    }
-    handleUpdateFilter(key, value.replace(/ +(?= )/g, EMPTY_STRING), setFilter);
-  };
+  const handleInput = (callback: () => TagsAction = null) =>
+    (key: string) => (e: ChangeEvent<HTMLInputElement>): void => {
+      const value = e.target.value;
+      if (isEmpty(value)) {
+        setValidator(key, null, EMPTY_STRING);
+      }
+      callback && callback();
+      handleUpdateFilter(key, value.replace(/ +(?= )/g, EMPTY_STRING), setFilter);
+    };
   return <Form
     labelCol={{ span: 6 }}
     wrapperCol={{ span: 18 }}
@@ -126,12 +135,18 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
         errorMessage={TEXT_VALIDATOR}
         label={{ text: 'JWT Token (VidIQ.com)', labelCol: 5, wrapperCol: 19 }}
         placeholder={'скопируйте токен для отправки сообщений сюда'}
-        onChange={handleInput}
+        onChange={handleInput(props.testConnectionRefresh)}
         onBlur={validateInput}
       />
-      <Button onClick={() => props.testConnection(filter.jwtToken)}>
-        {showTestConnectionIcon(state.testConnection)} Проверить соединение
-      </Button>
+      <Button onClick={() => {
+        if (isEmpty(filter.jwtToken)) {
+          message.error('JWT Token (VidIQ.com) не может быть пустым!');
+        } else {
+          props.testConnection(filter.jwtToken);
+        }
+      }}>
+        Проверить соединение
+      </Button>&nbsp;&nbsp;{showTestConnectionIcon(state.testConnection)}
     </Form.Item>
     <br/>
     <Form.Item>
@@ -143,7 +158,7 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
         errorMessage={TEXT_VALIDATOR}
         label={{ text: 'Имя выгружаемого файла', labelCol: 5, wrapperCol: 19 }}
         placeholder={'придумайте имя файла'}
-        onChange={handleInput}
+        onChange={handleInput()}
         onBlur={validateInput}
       />
     </Form.Item>
