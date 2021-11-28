@@ -1,4 +1,5 @@
 const jsonToXls = require('./xls/jsonToXls');
+const tagUtils = require('./utils/TagsUtils');
 const contentDisposition = require('content-disposition');
 
 module.exports = (app) => {
@@ -16,6 +17,12 @@ module.exports = (app) => {
       .then(function () {
         res.end();
       });
+  });
+
+  app.post('/api/tags/generate', (req, res) => {
+    res.status(200);
+    res.setHeader('Content-Type', 'application/json;charset=utf-8');
+    res.send(tagUtils.getTagsCloud(JSON.parse(req.body.map)));
   });
 
 };

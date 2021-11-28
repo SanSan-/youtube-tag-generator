@@ -1,9 +1,8 @@
 import * as backend from '~actions/backend';
 import { TagsAction, ThunkResult } from '~types/action';
 import ActionType from '~enums/module/TagsGenerator';
-import { exportApi, vidIqApi } from '~dictionaries/backend';
+import { exportApi, tagsApi, vidIqApi } from '~dictionaries/backend';
 import { exportToExcelAction, parseJsonToCsv } from '~utils/SaveUtils';
-import { getTagsCloud } from '~utils/TagsUtils';
 import { TagCloudItem } from '~types/state';
 import { CompvolObj, VidIqHotterSearchResponse } from '~types/response';
 import { ErrorType } from '~types/dto';
@@ -119,12 +118,16 @@ export const exportDataToExcel = <T extends TagCloudItem> (
 
 export const generateTagsCloud = (cloudMap: string[][]): ThunkResult<void, TagsAction> => (dispatch) => {
   dispatch(startTagsGeneration());
-  try {
-    const tagsCloud = getTagsCloud(cloudMap);
-    dispatch(tagsGenerationSuccess(tagsCloud));
-  } finally {
-    dispatch(endTagsGeneration());
-  }
+  dispatch(backend.executeRequest(tagsApi.generate, { map: cloudMap }, { spinner: false }))
+    .then((either: Either<ErrorType, string[]>) => {
+      either.mapRight((response) => dispatch(tagsGenerationSuccess(response)))
+        .mapLeft(() => dispatch(endTagsGeneration()));
+    })
+    .catch((response: Error) => {
+      // eslint-disable-next-line no-console
+      console.error(response);
+      dispatch(endTagsGeneration());
+    });
 };
 
 export const testConnection = (jwtToken: string): ThunkResult<Promise<void>, TagsAction> => (dispatch) => (
