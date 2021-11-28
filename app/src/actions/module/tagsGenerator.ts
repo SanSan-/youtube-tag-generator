@@ -109,9 +109,11 @@ export const exportDataToExcel = <T extends TagCloudItem> (
   fileName: string,
   json: T[],
   type: string,
-  headers: Record<string, unknown>[] = null
+  headers: Record<string, unknown>[],
+  conditionalFormatting: Record<string, unknown>[] = []
 ): ThunkResult<Promise<void>, TagsAction> => exportToExcelAction(
-    headers ? { fileName, json, headers, type } : { fileName, json, type }, exportApi.toExcel, startToXlsExport,
+    headers ? { fileName, json, type, headers, conditionalFormatting } : { fileName, json, type }, exportApi.toExcel,
+    startToXlsExport,
     endToXlsExport
   );
 
