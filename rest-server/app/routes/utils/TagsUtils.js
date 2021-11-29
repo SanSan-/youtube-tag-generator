@@ -15,19 +15,14 @@ const getTagsCloud = (cloudMap) => {
     prev = temp;
     cloud = [...cloud, ...temp];
   }
-  let result = {};
+  const result = new Set();
   for (let i = 0; i < cloudMap.length; i++) {
     const curr = cloudMap[i];
-    result = {
-      ...result,
-      ...cloud.reduce(
-        (obj, idxList) => ({
-          ...obj,
-          [idxList.map((idx) => (curr[idx])).join(' ')]: null
-        }), {})
-    };
+    cloud.forEach((idxList) => {
+      result.add(idxList.map((idx) => (curr[idx])).join(' '));
+    });
   }
-  return Object.keys(result);
+  return [...result];
 };
 
 module.exports = { getTagsCloud };

@@ -33,6 +33,8 @@ import { COMP_OPTIONS } from '~dictionaries/options';
 import ResultTable from '~components/antd/ResultTable';
 import { statisticCondFormat, statisticTableHeaders, tagsTableHeaders } from '~dictionaries/tableHeaders';
 
+const { Countdown } = Statistic;
+
 interface Props {
   state: TagsState;
   generateTagsCloud: (cloudMap: string[][]) => ThunkResult<void, TagsAction>;
@@ -47,6 +49,11 @@ interface Props {
   collectStatistic: (tagsCloud: string[], jwtToken: string) => ThunkResult<void, TagsAction>;
 }
 
+const calcDeadline = (startDate: number, doneCount: number, allCount: number): number => {
+  const now = Date.now();
+  return now + ((allCount - doneCount) * ((now - startDate) / doneCount));
+};
+
 const showTestConnectionIcon = (testConnection: string): ReactElement => {
   switch (testConnection) {
     case 'success':
@@ -58,7 +65,7 @@ const showTestConnectionIcon = (testConnection: string): ReactElement => {
         <CloseCircleOutlined style={{ color: 'red' }}/>
       </Tooltip>;
     default:
-      return <Tooltip placement='right' title={'Проверить соединение?'} color={'blue'}>
+      return <Tooltip placement='right' title={'Проверить JWT Token?'} color={'blue'}>
         <ExclamationCircleOutlined style={{ color: 'blue' }}/>
       </Tooltip>;
   }
@@ -78,7 +85,7 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
     setTagsCloud(state.tagsCloud.map((tag, i) => ({ key: i, tag })));
   }, [state.tagsCloud]);
   useEffect(() => {
-    setTagsStatistic(state.tagsStatistic.map(
+    !state.isLoadingStatistic && !isEmptyArray(state.tagsStatistic) && setTagsStatistic(state.tagsStatistic.map(
       (item: TagStatisticItem, i: number) => ({
         key: i,
         tag: item.tag,
@@ -86,7 +93,7 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
         competition: COMP_OPTIONS[Math.ceil(item.competition * 5) - 1],
         rank: <Rate disabled allowHalf defaultValue={item.rank * 5}/>
       })));
-  }, [state.tagsStatistic]);
+  }, [state.isLoadingStatistic]);
   useEffect(() => {
     const filtered = Object.keys(tags).filter((key) => tags[key].length > 0);
     const combNum = filtered.reduce((prev, key) => prev * tags[key].length, 1);
@@ -228,7 +235,7 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
         size={FORM_ELEM_DEFAULT_SIZE}/>
     </Form.Item>
     <Form.Item hidden={isEmptyArray(state.tagsCloud)}>
-      <Button loading={state.isLoadingStatistic}
+      <Button loading={state.isLoadingStatistic} type={isEmptyArray(tagsStatistic) ? 'default' : 'primary'}
         onClick={() => {
           if (isEmpty(filter.jwtToken) || state.testConnection !== 'success') {
             message.error('Введите валидный JWT Token (VidIQ.com) или проверьте соединение');
@@ -238,17 +245,8 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
         }}>
         <YoutubeOutlined style={{ color: 'red' }}/> Собрать статистику
       </Button>
-    </Form.Item>
-    <br/>
-    <Form.Item hidden={!state.isLoadingStatistic}>
-      <Progress
-        percent={state.tagsStatisticCount > 0 ? Math.round((state.tagsStatisticCount / state.tagsCloud.length) * 100) :
-          0}/>
-    </Form.Item>
-    <Form.Item hidden={state.isLoadingStatistic || isEmptyArray(tagsStatistic)}>
-      <ResultTable data={tagsStatistic} headers={tagsStatisticHeaders}/>
-      <br/>
-      <Button loading={state.isLoadingExportToJson}
+      &nbsp;
+      <Button loading={state.isLoadingExportToJson} hidden={state.isLoadingStatistic || isEmptyArray(tagsStatistic)}
         onClick={() => props.exportDataToJson(
           `${filter.fileName}.statistic${addTimestamp ? DOT_SIGN + dayjs().format(EXPORT_DATE_FORMAT) : ''}.json`,
           JSON.stringify(state.tagsStatistic)
@@ -256,7 +254,7 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
         <DownloadOutlined/> Выгрузить статистику в JSON
       </Button>
       &nbsp;
-      <Button loading={state.isLoadingExportToCsv}
+      <Button loading={state.isLoadingExportToCsv} hidden={state.isLoadingStatistic || isEmptyArray(tagsStatistic)}
         onClick={() => props.exportDataToCsv(
           `${filter.fileName}.statistic${addTimestamp ? DOT_SIGN + dayjs().format(EXPORT_DATE_FORMAT) : ''}.csv`,
           state.tagsStatistic
@@ -264,7 +262,7 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
         <DownloadOutlined/> Выгрузить статистику в CSV
       </Button>
       &nbsp;
-      <Button loading={state.isLoadingExportToXls}
+      <Button loading={state.isLoadingExportToXls} hidden={state.isLoadingStatistic || isEmptyArray(tagsStatistic)}
         onClick={() => exportDataToExcel(
           `${filter.fileName}.statistic${addTimestamp ? DOT_SIGN + dayjs().format(EXPORT_DATE_FORMAT) : ''}.xlsx`,
           state.tagsStatistic,
@@ -274,6 +272,17 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
         )}>
         <DownloadOutlined/> Выгрузить статистику в Excel
       </Button>
+    </Form.Item>
+    <br/>
+    <Form.Item hidden={!state.isLoadingStatistic}>
+      <Progress status={state.isLoadingStatistic ? 'active' : 'normal'}
+        percent={state.tagsStatisticCount > 0 ? Math.round((state.tagsStatisticCount / state.tagsCloud.length) * 100) :
+          0}/>
+      <Countdown title={'Осталось'}
+        value={calcDeadline(state.tagsStatisticStartDate, state.tagsStatisticCount, state.tagsCloud.length)}/>
+    </Form.Item>
+    <Form.Item hidden={state.isLoadingStatistic || isEmptyArray(tagsStatistic)}>
+      <ResultTable data={tagsStatistic} headers={tagsStatisticHeaders}/>
     </Form.Item>
   </Form>;
 };

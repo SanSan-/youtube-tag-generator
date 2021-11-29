@@ -1,6 +1,4 @@
 import { isEmptyArray } from '~utils/CommonUtils';
-import { SPACE_SIGN } from '~const/common';
-import { StringBiRecordType } from '~types/dto';
 
 export const getTagsCloudMap = (keywords: string[][], combNum: number): string[][] => {
   let temp = [] as string[][];
@@ -37,23 +35,18 @@ export const getTagsCloud = (cloudMap: string[][]): string[] => {
     let temp = [] as number[][];
     for (let j = 0; j < idxs.length; j++) {
       const current = idxs[j];
-      const exclude = prev.filter((elem: number[]) => !elem.includes(current));
-      temp = [...temp, ...exclude.reduce((arr: number[][], tail: number[]) => ([...arr, [current, ...tail]]), [])];
+      const exclude = prev.filter((elem) => !elem.includes(current));
+      temp = [...temp, ...exclude.reduce((arr: number[][], tail) => ([...arr, [current, ...tail]]), [])];
     }
     prev = temp;
     cloud = [...cloud, ...temp];
   }
-  let result = {} as StringBiRecordType;
+  const result = new Set<string>();
   for (let i = 0; i < cloudMap.length; i++) {
     const curr = cloudMap[i];
-    result = {
-      ...result,
-      ...cloud.reduce(
-        (obj: StringBiRecordType, idxList: number[]) => ({
-          ...obj,
-          [idxList.map((idx) => (curr[idx])).join(SPACE_SIGN)]: null
-        }), {})
-    };
+    cloud.forEach((idxList) => {
+      result.add(idxList.map((idx) => (curr[idx])).join(' '));
+    });
   }
-  return Object.keys(result);
+  return [...result];
 };

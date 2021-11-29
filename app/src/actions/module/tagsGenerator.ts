@@ -69,6 +69,10 @@ export const startCollectStatistic = (): TagsAction => ({
   type: ActionType.START_LOAD_STATISTIC
 });
 
+export const endCollectStatistic = (): TagsAction => ({
+  type: ActionType.END_LOAD_STATISTIC
+});
+
 const testConnectionSuccess = (): TagsAction => ({
   type: ActionType.TEST_CONNECTION_SUCCESS
 });
@@ -166,9 +170,10 @@ const getStatistic = (tag: string, jwtToken: string): ThunkResult<Promise<void>,
 );
 
 export const collectStatistic = (
-  tagsCloud: string[], jwtToken: string): ThunkResult<void, TagsAction> => (dispatch) => {
+  tagsCloud: string[], jwtToken: string): ThunkResult<void, TagsAction> => async (dispatch) => {
   dispatch(startCollectStatistic());
-  tagsCloud.forEach((tag) => {
-    dispatch(getStatistic(tag, jwtToken));
-  });
+  for (const tag of tagsCloud) {
+    await dispatch(getStatistic(tag, jwtToken));
+  }
+  dispatch(endCollectStatistic());
 };

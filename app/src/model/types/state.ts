@@ -112,6 +112,7 @@ export interface TagsState extends DefaultState {
   tagsStatistic?: TagStatisticItem[];
   testConnection?: ConnectionState;
   tagsStatisticCount?: number;
+  tagsStatisticStartDate?: number;
   isLoadingExportToJson?: boolean;
   isLoadingExportToCsv?: boolean;
   isLoadingExportToXls?: boolean;
