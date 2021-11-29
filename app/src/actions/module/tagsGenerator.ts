@@ -169,11 +169,19 @@ const getStatistic = (tag: string, jwtToken: string): ThunkResult<Promise<void>,
     .catch((response: Error) => console.error(response))
 );
 
+const collectStatisticParallel = (
+  tags: string[], jwtToken: string): ThunkResult<Promise<void>, TagsAction> => (dispatch) => (Promise.allSettled(
+  tags.map((tag) => dispatch(getStatistic(tag, jwtToken))))
+  // eslint-disable-next-line no-console
+  .catch((response: Error) => console.error(response)));
+
 export const collectStatistic = (
-  tagsCloud: string[], jwtToken: string): ThunkResult<void, TagsAction> => async (dispatch) => {
+  tagsCloud: string[], jwtToken: string, threadCount = 3): ThunkResult<void, TagsAction> => async (dispatch) => {
   dispatch(startCollectStatistic());
-  for (const tag of tagsCloud) {
-    await dispatch(getStatistic(tag, jwtToken));
+  let start = 0;
+  while (start < tagsCloud.length) {
+    await dispatch(collectStatisticParallel(tagsCloud.slice(start, start + threadCount), jwtToken));
+    start += threadCount;
   }
   dispatch(endCollectStatistic());
 };
