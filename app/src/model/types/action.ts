@@ -3,7 +3,7 @@ import { AnyAction } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 import { GeneralState } from '~types/store';
 import { ActionResponse, Spinner } from '~types/dto';
-import { CompvolObj } from '~types/response';
+import { CompvolObj, FileActionType } from '~types/response';
 
 export interface GetStateAction {
   (): GeneralState;
@@ -60,7 +60,10 @@ export interface TagsAction extends AnyAction {
   binaryData?: number[];
   stringData?: string;
   tagsCloud?: string[];
-  tagStatistic?: CompvolObj;
+  statisticResponse?: CompvolObj;
+  importContent?: unknown;
+  fileActionError?: string;
+  fileAction?: FileActionType;
 }
 
 export interface SendActionResponseAction extends AnyAction {

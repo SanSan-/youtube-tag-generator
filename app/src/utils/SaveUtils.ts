@@ -7,7 +7,7 @@ import { AnyAction } from 'redux';
 import { Either } from '@sweet-monads/either';
 import { ErrorType } from '~types/dto';
 import { isEmpty, isEmptyArray } from '~utils/CommonUtils';
-import { TagCloudItem } from '~types/state';
+import { TagItem } from '~types/state';
 import { AnyResponse } from '~types/response';
 
 const FILENAME_MASK = /filename[^;\n]*=\s*(UTF-\d['"]*)?((['"]).*?[.]$\2|[^;\n]*)?/gi;
@@ -78,7 +78,7 @@ export const exportToExcelAction = (
       });
   };
 
-export const parseJsonToCsv = <T extends TagCloudItem> (jsonData: T[]): string => {
+export const parseJsonToCsv = <T extends TagItem> (jsonData: T[]): string => {
   if (isEmpty(jsonData)) {
     return EMPTY_STRING;
   }

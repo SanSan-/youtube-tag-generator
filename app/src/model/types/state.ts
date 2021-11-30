@@ -53,7 +53,7 @@ export interface PromiseDialog extends CommonDialog {
 
 export type EditableTableProps = Parameters<typeof Table>[0];
 
-export type TagsType = Record<React.Key, string[]>;
+export type Keywords = Record<React.Key, string[]>;
 
 export type ColumnTypes = Exclude<EditableTableProps['columns'], undefined>;
 
@@ -63,7 +63,7 @@ export interface DataType {
 }
 
 export interface EditableTableState {
-  keywords: TagsType;
+  keywords: Keywords;
   dataSource: DataType[];
   count: number;
 }
@@ -88,18 +88,18 @@ export interface BreadcrumbState extends DefaultStringState {
   link: string;
 }
 
-export interface TagCloudItem extends DefaultState {
+export interface TagItem extends DefaultState {
   key?: number;
   tag: string;
 }
 
-export interface TagStatisticItem extends TagCloudItem {
+export interface TagStatisticItem extends TagItem {
   volume: number;
   competition: number;
   rank: number;
 }
 
-export interface TagStatisticTableData extends TagCloudItem {
+export interface TagStatisticTableData extends TagItem {
   volume: ReactElement;
   competition: ReactElement;
   rank: ReactElement;
@@ -108,9 +108,10 @@ export interface TagStatisticTableData extends TagCloudItem {
 export type ConnectionState = 'success' | 'failed' | null;
 
 export interface TagsState extends DefaultState {
-  tagsCloud?: string[];
-  tagsStatistic?: TagStatisticItem[];
+  keywords?: Keywords;
   testConnection?: ConnectionState;
+  tags?: string[];
+  tagsStatistic?: TagStatisticItem[];
   tagsStatisticCount?: number;
   tagsStatisticStartDate?: number;
   isLoadingExportToJson?: boolean;
@@ -118,6 +119,8 @@ export interface TagsState extends DefaultState {
   isLoadingExportToXls?: boolean;
   isLoadingGeneration?: boolean;
   isLoadingStatistic?: boolean;
+  isFileActionFailed?: boolean;
+  fileActionError?: string;
 }
 
 /**

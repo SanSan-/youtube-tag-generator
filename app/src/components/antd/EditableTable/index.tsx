@@ -4,18 +4,19 @@ import { PlusOutlined } from '@ant-design/icons';
 import EditableRow from '~components/antd/EditableRow';
 import EditableCell from '~components/antd/EditableCell';
 import KeyWordGenerator from '~forms/KeyWordGenerator';
-import { ColumnTypes, DataType, EditableTableProps, EditableTableState, TagsType } from '~types/state';
+import { ColumnTypes, DataType, EditableTableProps, EditableTableState, Keywords } from '~types/state';
 import { isEmptyArray } from '~utils/CommonUtils';
 
 interface Props extends EditableTableProps {
-  onUpdate: (tags: TagsType) => void;
+  onUpdate: (keywords: Keywords) => void;
+  keywords: Keywords;
 }
 
-const initialState: EditableTableState = {
-  keywords: {},
+const initialState = (keywords: Keywords): EditableTableState => ({
+  keywords: keywords || {},
   dataSource: [],
   count: 0
-};
+});
 
 class EditableTable extends React.Component<Props, EditableTableState> {
   columns: (ColumnTypes[number] & { editable?: boolean; dataIndex: string })[];
@@ -39,7 +40,23 @@ class EditableTable extends React.Component<Props, EditableTableState> {
           ) : null
       }
     ];
-    this.state = initialState;
+    this.state = initialState(this.props.keywords);
+  }
+
+  componentDidUpdate (nextProps: Props): void {
+    if (nextProps.keywords !== this.props.keywords) {
+      this.setState({
+        keywords: nextProps.keywords, dataSource: Object.keys(nextProps.keywords).map((idx) => ({
+          key: parseInt(idx),
+          keywords: <KeyWordGenerator index={parseInt(idx)} initTags={nextProps.keywords[idx]}
+            onChange={(value, key) => {
+              const newKeywords = { ...this.state.keywords, [key]: value };
+              this.setState({ keywords: newKeywords });
+              this.props.onUpdate(newKeywords);
+            }}/>
+        })), count: Object.keys(nextProps.keywords).length
+      });
+    }
   }
 
   handleDelete = (key: React.Key): void => {
@@ -47,7 +64,7 @@ class EditableTable extends React.Component<Props, EditableTableState> {
     const newKeywords = Object.keys(this.state.keywords).filter((item) => (item != key)).reduce((obj, idx) => {
       obj[idx] = this.state.keywords[idx];
       return obj;
-    }, {} as TagsType);
+    }, {} as Keywords);
     this.setState({
       dataSource: dataSource.filter((item) => (item.key !== key)),
       keywords: newKeywords
@@ -72,7 +89,7 @@ class EditableTable extends React.Component<Props, EditableTableState> {
     this.props.onUpdate({ ...keywords, [count]: [] });
   };
   handleClearAll = (): void => {
-    this.setState(initialState);
+    this.setState(initialState({}));
     this.props.onUpdate({});
   };
   handleSave = (row: DataType): void => {

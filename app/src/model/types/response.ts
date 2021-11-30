@@ -1,4 +1,5 @@
 import { DefaultNumberState } from '~types/state';
+import { StringBiRecordType } from '~types/dto';
 
 export interface AnyResponse {
   [key: string]: string | unknown;
@@ -30,6 +31,12 @@ export interface CountItem extends DefaultNumberState {
   min: number;
   max: number;
   mean: number;
+}
+
+export interface FileActionType extends StringBiRecordType {
+  actionType?: string;
+  contentType?: string;
+  format?: string;
 }
 
 export type CompvolObj = { [key: string]: KeywordStatistic };
