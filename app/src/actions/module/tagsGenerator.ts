@@ -3,58 +3,22 @@ import { TagsAction, ThunkResult } from '~types/action';
 import ActionType from '~enums/module/TagsGenerator';
 import { exportApi, tagsApi, vidIqApi } from '~dictionaries/backend';
 import { exportToExcelAction, parseJsonToCsv } from '~utils/SaveUtils';
-import { TagCloudItem } from '~types/state';
-import { CompvolObj, VidIqHotterSearchResponse } from '~types/response';
+import { Keywords, TagItem } from '~types/state';
+import { CompvolObj, FileActionType, VidIqHotterSearchResponse } from '~types/response';
 import { ErrorType } from '~types/dto';
 import { Either } from '@sweet-monads/either';
 import LocalStorageEnum from '~enums/LocalStorage';
-
-export const startToXlsExport = (): TagsAction => ({
-  type: ActionType.START_EXPORT_TO_EXCEL
-});
-
-export const endToXlsExport = (): TagsAction => ({
-  type: ActionType.END_EXPORT_TO_EXCEL
-});
-
-export const exportToXlsSuccess = (fileName: string) => (stringData: string): TagsAction => ({
-  type: ActionType.EXPORT_TO_EXCEL_SUCCESS,
-  stringData,
-  fileName
-});
-
-export const startToJsonExport = (): TagsAction => ({
-  type: ActionType.START_EXPORT_TO_JSON
-});
-
-export const exportToJsonSuccess = (stringData: string, fileName: string): TagsAction => ({
-  type: ActionType.EXPORT_TO_JSON_SUCCESS,
-  stringData,
-  fileName
-});
-
-export const startToCsvExport = (): TagsAction => ({
-  type: ActionType.START_EXPORT_TO_CSV
-});
-
-export const endToCsvExport = (): TagsAction => ({
-  type: ActionType.END_EXPORT_TO_CSV
-});
-
-export const exportToCsvSuccess = (stringData: string, fileName: string): TagsAction => ({
-  type: ActionType.EXPORT_TO_CSV_SUCCESS,
-  stringData,
-  fileName
-});
+import { FileAction, FileContent, FileFormat } from '~enums/File';
+import { EMPTY_STRING } from '~const/common';
 
 export const tagsGenerationSuccess = (tagsCloud: string[]): TagsAction => ({
   type: ActionType.TAGS_GENERATION_SUCCESS,
   tagsCloud
 });
 
-export const addStatisticSuccess = (tagStatistic: CompvolObj): TagsAction => ({
+export const addStatisticSuccess = (statisticResponse: CompvolObj): TagsAction => ({
   type: ActionType.ADD_STATISTIC_SUCCESS,
-  tagStatistic
+  statisticResponse
 });
 
 export const startTagsGeneration = (): TagsAction => ({
@@ -93,22 +57,102 @@ export const refreshStatisticCounter = (): TagsAction => ({
   type: ActionType.REFRESH_STATISTIC_COUNT
 });
 
-export const exportDataToJson = (fileName: string, data: string): ThunkResult<void, TagsAction> => (dispatch) => {
-  dispatch(startToJsonExport());
-  dispatch(exportToJsonSuccess(data, fileName));
+export const startFileAction = (fileAction: FileActionType): TagsAction => ({
+  type: ActionType.START_FILE_ACTION,
+  fileAction
+});
+
+export const endFileAction = (fileAction: FileActionType): TagsAction => ({
+  type: ActionType.END_FILE_ACTION,
+  fileAction
+});
+
+export const fileActionSuccess = (
+  fileAction: FileActionType, stringData?: string, fileName?: string, importContent?: unknown
+): TagsAction => ({
+  type: ActionType.FILE_ACTION_SUCCESS,
+  fileAction,
+  stringData,
+  fileName,
+  importContent
+});
+
+export const fileActionFailed = (fileAction: FileActionType, fileActionError?: string): TagsAction => ({
+  type: ActionType.FILE_ACTION_FAIL,
+  fileActionError,
+  fileAction
+});
+
+const getKeyByFileContentType = (contentType: string): string => {
+  switch (contentType) {
+    case FileContent.TAGS:
+      return 'tags';
+    case FileContent.KEYWORDS:
+      return 'keywords';
+    case FileContent.STATISTIC:
+      return 'tagsStatistic';
+    default:
+      return EMPTY_STRING;
+  }
 };
 
-export const exportDataToCsv = <T extends TagCloudItem> (
+export const importFromJson = (
+  fileAction: FileActionType, data: string): ThunkResult<void, TagsAction> => (dispatch) => {
+  try {
+    const json = JSON.parse(data) as Record<string, unknown> | Record<string, unknown>[];
+    switch (fileAction.contentType) {
+      case FileContent.STATISTIC: {
+        if (json instanceof Array) {
+          dispatch(
+            fileActionSuccess(
+              { ...fileAction, format: FileFormat.JSON, actionType: FileAction.IMPORT }, null, null, json));
+        } else if (json instanceof Object &&
+          Object.keys(json).includes(getKeyByFileContentType(fileAction.contentType))) {
+          dispatch(
+            fileActionSuccess({ ...fileAction, format: FileFormat.JSON, actionType: FileAction.IMPORT }, null, null,
+              json[getKeyByFileContentType(fileAction.contentType)] as unknown[]
+            ));
+        } else {
+          dispatch(fileActionFailed({ ...fileAction, format: FileFormat.JSON, actionType: FileAction.IMPORT }));
+        }
+        break;
+      }
+      case FileContent.TAGS: {
+        dispatch(
+          fileActionSuccess(
+            { ...fileAction, format: FileFormat.JSON, actionType: FileAction.IMPORT }, null, null, json));
+        break;
+      }
+      case FileContent.KEYWORDS: {
+        dispatch(
+          fileActionSuccess({ ...fileAction, format: FileFormat.JSON, actionType: FileAction.IMPORT }, null, null,
+            json as Keywords
+          ));
+        break;
+      }
+    }
+  } catch (error) {
+    dispatch(fileActionFailed({ ...fileAction, format: FileFormat.JSON, actionType: FileAction.IMPORT }, error));
+  }
+};
+
+export const exportDataToJson = (fileName: string, data: string): ThunkResult<void, TagsAction> => (dispatch) => {
+  dispatch(startFileAction({ actionType: FileAction.EXPORT, format: FileFormat.JSON }));
+  dispatch(fileActionSuccess({ actionType: FileAction.EXPORT, format: FileFormat.JSON }, data, fileName));
+};
+
+export const exportDataToCsv = <T extends TagItem> (
   fileName: string, json: T[]): ThunkResult<void, TagsAction> => (dispatch) => {
-    dispatch(startToCsvExport());
+    dispatch(startFileAction({ actionType: FileAction.EXPORT, format: FileFormat.CSV }));
     try {
-      dispatch(exportToCsvSuccess(parseJsonToCsv(json), fileName));
+      dispatch(
+        fileActionSuccess({ actionType: FileAction.EXPORT, format: FileFormat.CSV }, parseJsonToCsv(json), fileName));
     } finally {
-      endToCsvExport();
+      endFileAction({ actionType: FileAction.EXPORT, format: FileFormat.CSV });
     }
   };
 
-export const exportDataToExcel = <T extends TagCloudItem> (
+export const exportDataToExcel = <T extends TagItem> (
   fileName: string,
   json: T[],
   type: string,
@@ -116,8 +160,8 @@ export const exportDataToExcel = <T extends TagCloudItem> (
   conditionalFormatting: Record<string, unknown>[] = []
 ): ThunkResult<Promise<void>, TagsAction> => exportToExcelAction(
     headers ? { fileName, json, type, headers, conditionalFormatting } : { fileName, json, type }, exportApi.toExcel,
-    startToXlsExport,
-    endToXlsExport
+    () => startFileAction({ actionType: FileAction.EXPORT, format: FileFormat.EXCEL }),
+    () => endFileAction({ actionType: FileAction.EXPORT, format: FileFormat.EXCEL })
   );
 
 export const generateTagsCloud = (cloudMap: string[][]): ThunkResult<void, TagsAction> => (dispatch) => {

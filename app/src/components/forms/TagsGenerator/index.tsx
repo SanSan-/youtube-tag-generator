@@ -1,23 +1,24 @@
 import React, { ChangeEvent, ReactElement, useEffect, useState } from 'react';
 import { connect } from 'react-redux';
-import { Button, Col, Form, message, Progress, Rate, Row, Statistic, Switch, Table, Tooltip } from 'antd';
+import { Button, Col, Form, message, Progress, Rate, Row, Statistic, Switch, Table, Tooltip, Upload } from 'antd';
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   DownloadOutlined,
   ExclamationCircleOutlined,
+  UploadOutlined,
   YoutubeOutlined
 } from '@ant-design/icons';
 import * as actions from '~actions/module/tagsGenerator';
-import { TagCloudItem, TagsState, TagStatisticItem, TagStatisticTableData, TagsType } from '~types/state';
+import { Keywords, TagItem, TagsState, TagStatisticItem, TagStatisticTableData } from '~types/state';
 import { GeneralState } from '~types/store';
 import { bindActionCreators } from 'redux';
 import { TagsAction, ThunkResult } from '~types/action';
 import dayjs from 'dayjs';
 import './style.less';
 import EditableTable from '~components/antd/EditableTable';
-import { getTagsCloudMap } from '~utils/TagsUtils';
-import { isEmpty, isEmptyArray } from '~utils/CommonUtils';
+import { getTagsMap } from '~utils/TagsUtils';
+import { isEmpty, isEmptyArray, isEmptyObject } from '~utils/CommonUtils';
 import { tagsCloudHeaders, tagsStatisticHeaders } from '~dictionaries/headers';
 import InputFilter from '~components/antd/InputFilter';
 import FieldIdEnum from '~enums/module/TagsGeneratorFileds';
@@ -32,15 +33,19 @@ import { FORM_ELEM_DEFAULT_SIZE } from '~const/settings';
 import { COMP_OPTIONS } from '~dictionaries/options';
 import ResultTable from '~components/antd/ResultTable';
 import { statisticCondFormat, statisticTableHeaders, tagsTableHeaders } from '~dictionaries/tableHeaders';
+import { UploadChangeParam } from 'antd/lib/upload/interface';
+import { FileActionType } from '~types/response';
+import { FileContent } from '~enums/File';
 
 const { Countdown } = Statistic;
 
 interface Props {
   state: TagsState;
   generateTagsCloud: (cloudMap: string[][]) => ThunkResult<void, TagsAction>;
+  importFromJson: (fileAction: FileActionType, data: string) => ThunkResult<void, TagsAction>;
   exportDataToJson: (fileName: string, data: string) => ThunkResult<void, TagsAction>;
-  exportDataToCsv: <T extends TagCloudItem> (fileName: string, json: T[]) => ThunkResult<void, TagsAction>;
-  exportDataToExcel: <T extends TagCloudItem> (
+  exportDataToCsv: <T extends TagItem> (fileName: string, json: T[]) => ThunkResult<void, TagsAction>;
+  exportDataToExcel: <T extends TagItem> (
     fileName: string, json: T[], type: string, headers: Record<string, unknown>[],
     conditionalFormatting?: Record<string, unknown>[]
   ) => ThunkResult<Promise<void>, TagsAction>;
@@ -75,15 +80,19 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
   const { state, exportDataToExcel } = props;
   const [filter, setFilter] = useState(defaultFilter);
   const [validators, setValidators] = useState(defaultValidators);
-  const [tags, setTags] = useState({} as TagsType);
+  const [keywords, setKeywords] = useState({} as Keywords);
   const [tagsCount, setTagsCount] = useState(0);
-  const [tagsCloudMap, setTagsCloudMap] = useState([] as string[][]);
-  const [tagsCloud, setTagsCloud] = useState([] as TagCloudItem[]);
+  const [tagsMap, setTagsMap] = useState([] as string[][]);
+  const [tags, setTags] = useState([] as TagItem[]);
   const [tagsStatistic, setTagsStatistic] = useState([] as TagStatisticTableData[]);
   const [addTimestamp, setAddTimestamp] = useState(false);
   useEffect(() => {
-    setTagsCloud(state.tagsCloud.map((tag, i) => ({ key: i, tag })));
-  }, [state.tagsCloud]);
+    setTags(state.tags.map((tag, i) => ({ key: i, tag })));
+  }, [state.tags]);
+  useEffect(() => {
+    state.isFileActionFailed && message.error('Произошла ошибка во время импорта');
+    state.fileActionError && message.error(state.fileActionError);
+  }, [state.isFileActionFailed]);
   useEffect(() => {
     !state.isLoadingStatistic && !isEmptyArray(state.tagsStatistic) && setTagsStatistic(state.tagsStatistic.map(
       (item: TagStatisticItem, i: number) => ({
@@ -93,16 +102,16 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
         competition: COMP_OPTIONS[Math.ceil(item.competition * 5) - 1],
         rank: <Rate disabled allowHalf defaultValue={item.rank * 5}/>
       })));
-  }, [state.isLoadingStatistic]);
+  }, [state.isLoadingStatistic, state.tagsStatistic]);
   useEffect(() => {
-    const filtered = Object.keys(tags).filter((key) => tags[key].length > 0);
-    const combNum = filtered.reduce((prev, key) => prev * tags[key].length, 1);
-    setTagsCount(filtered.length);
-    setTagsCloudMap(getTagsCloudMap(
-      Object.values(tags).filter((values) => values.length > 0),
-      combNum
+    const filteredKeys = Object.keys(keywords).filter((key) => keywords[key].length > 0);
+    setTagsCount(filteredKeys.length);
+    setTagsMap(getTagsMap(
+      Object.values(keywords).filter((values) => values.length > 0)
+        .map((values) => values.map((value) => value.toLowerCase())),
+      filteredKeys.reduce((prev, key) => prev * keywords[key].length, 1)
     ));
-  }, [tags]);
+  }, [keywords]);
   const setValidator = createSetValidator(setValidators);
   const validateInput = (
     key: string,
@@ -128,6 +137,16 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
       callback && callback();
       handleUpdateFilter(key, value.replace(/ +(?= )/g, EMPTY_STRING), setFilter);
     };
+  const handleUploadJson = (contentType: string) => ({ file }: UploadChangeParam): void => {
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsText(file.originFileObj, 'utf-8');
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    }).then((value) => {
+      props.importFromJson({ contentType }, value as string);
+    });
+  };
   return <Form
     labelCol={{ span: 6 }}
     wrapperCol={{ span: 18 }}
@@ -177,10 +196,30 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
         unCheckedChildren={'нет'}/>
     </Form.Item>
     <Form.Item>
+      <Upload onChange={handleUploadJson(FileContent.KEYWORDS)}>
+        <Button icon={<UploadOutlined/>}>Загрузить ключевые слова из JSON</Button>
+      </Upload>
+      &nbsp;
+      <Upload onChange={handleUploadJson(FileContent.TAGS)}>
+        <Button icon={<UploadOutlined/>}>Загрузить теги из JSON</Button>
+      </Upload>
+      &nbsp;
+      <Upload onChange={handleUploadJson(FileContent.STATISTIC)}>
+        <Button icon={<UploadOutlined/>}>Загрузить статистику из JSON</Button>
+      </Upload>
+    </Form.Item>
+    <Form.Item>
       Ключевые слова
-      <EditableTable onUpdate={(altKeywords) => {
-        setTags(altKeywords);
+      <EditableTable keywords={state.keywords} onUpdate={(altKeywords) => {
+        setKeywords(altKeywords);
       }}/>
+      <Button hidden={isEmptyObject(keywords)} loading={state.isLoadingExportToJson}
+        onClick={() => props.exportDataToJson(
+          `${filter.fileName}.keywords${addTimestamp ? DOT_SIGN + dayjs().format(EXPORT_DATE_FORMAT) : ''}.json`,
+          JSON.stringify(keywords)
+        )}>
+        <DownloadOutlined/> Выгрузить в JSON
+      </Button>
     </Form.Item>
     <br/>
     <Form.Item>
@@ -189,8 +228,8 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
           <Statistic title={'Количество ключевых слов (без синонимов)'} value={tagsCount}/>
         </Col>
         <Col span={12}>
-          <div hidden={isEmptyArray(state.tagsCloud)}>
-            <Statistic title={'Количество комбинаций из ключевых слов'} value={state.tagsCloud.length}/>
+          <div hidden={isEmptyArray(state.tags)}>
+            <Statistic title={'Количество комбинаций из ключевых слов'} value={state.tags.length}/>
           </div>
         </Col>
       </Row>
@@ -199,30 +238,30 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
     <Form.Item label='Сгенерировать все возможные комбинации из ключевых слов'
       labelCol={{ span: 8 }}
       wrapperCol={{ span: 16 }}>
-      <Button type='primary' loading={state.isLoadingGeneration} onClick={() => props.generateTagsCloud(tagsCloudMap)}>
+      <Button type='primary' loading={state.isLoadingGeneration} onClick={() => props.generateTagsCloud(tagsMap)}>
         Сгенерировать облако тегов
       </Button>
       &nbsp;
-      <Button hidden={isEmptyArray(state.tagsCloud)} loading={state.isLoadingExportToJson}
+      <Button hidden={isEmptyArray(state.tags)} loading={state.isLoadingExportToJson}
         onClick={() => props.exportDataToJson(
           `${filter.fileName}.tags${addTimestamp ? DOT_SIGN + dayjs().format(EXPORT_DATE_FORMAT) : ''}.json`,
-          JSON.stringify(state.tagsCloud)
+          JSON.stringify(state.tags)
         )}>
         <DownloadOutlined/> Выгрузить в JSON
       </Button>
       &nbsp;
-      <Button hidden={isEmptyArray(state.tagsCloud)} loading={state.isLoadingExportToCsv}
+      <Button hidden={isEmptyArray(state.tags)} loading={state.isLoadingExportToCsv}
         onClick={() => props.exportDataToCsv(
           `${filter.fileName}.tags${addTimestamp ? DOT_SIGN + dayjs().format(EXPORT_DATE_FORMAT) : ''}.csv`,
-          tagsCloud
+          tags
         )}>
         <DownloadOutlined/> Выгрузить в CSV
       </Button>
       &nbsp;
-      <Button hidden={isEmptyArray(state.tagsCloud)} loading={state.isLoadingExportToXls}
+      <Button hidden={isEmptyArray(state.tags)} loading={state.isLoadingExportToXls}
         onClick={() => exportDataToExcel(
           `${filter.fileName}.tags${addTimestamp ? DOT_SIGN + dayjs().format(EXPORT_DATE_FORMAT) : ''}.xlsx`,
-          tagsCloud,
+          tags,
           'Tags Cloud',
           tagsTableHeaders
         )}>
@@ -230,23 +269,24 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
       </Button>
     </Form.Item>
     <br/>
-    <Form.Item hidden={isEmptyArray(tagsCloud)}>
-      <Table dataSource={tagsCloud} columns={tagsCloudHeaders} showHeader={false}
+    <Form.Item hidden={isEmptyArray(tags)}>
+      <Table dataSource={tags} columns={tagsCloudHeaders} showHeader={false}
         size={FORM_ELEM_DEFAULT_SIZE}/>
     </Form.Item>
-    <Form.Item hidden={isEmptyArray(state.tagsCloud)}>
+    <Form.Item hidden={isEmptyArray(state.tags) && isEmptyArray(state.tagsStatistic)}>
       <Button loading={state.isLoadingStatistic} type={isEmptyArray(tagsStatistic) ? 'default' : 'primary'}
+        hidden={isEmptyArray(tags)}
         onClick={() => {
           if (isEmpty(filter.jwtToken) || state.testConnection !== 'success') {
             message.error('Введите валидный JWT Token (VidIQ.com) или проверьте соединение');
           } else {
-            props.collectStatistic(state.tagsCloud, filter.jwtToken);
+            props.collectStatistic(state.tags, filter.jwtToken);
           }
         }}>
         <YoutubeOutlined style={{ color: 'red' }}/> Собрать статистику
       </Button>
       &nbsp;
-      <Button loading={state.isLoadingExportToJson} hidden={state.isLoadingStatistic || isEmptyArray(tagsStatistic)}
+      <Button loading={state.isLoadingExportToJson} hidden={isEmptyArray(tagsStatistic)}
         onClick={() => props.exportDataToJson(
           `${filter.fileName}.statistic${addTimestamp ? DOT_SIGN + dayjs().format(EXPORT_DATE_FORMAT) : ''}.json`,
           JSON.stringify(state.tagsStatistic)
@@ -254,7 +294,7 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
         <DownloadOutlined/> Выгрузить статистику в JSON
       </Button>
       &nbsp;
-      <Button loading={state.isLoadingExportToCsv} hidden={state.isLoadingStatistic || isEmptyArray(tagsStatistic)}
+      <Button loading={state.isLoadingExportToCsv} hidden={isEmptyArray(tagsStatistic)}
         onClick={() => props.exportDataToCsv(
           `${filter.fileName}.statistic${addTimestamp ? DOT_SIGN + dayjs().format(EXPORT_DATE_FORMAT) : ''}.csv`,
           state.tagsStatistic
@@ -262,7 +302,7 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
         <DownloadOutlined/> Выгрузить статистику в CSV
       </Button>
       &nbsp;
-      <Button loading={state.isLoadingExportToXls} hidden={state.isLoadingStatistic || isEmptyArray(tagsStatistic)}
+      <Button loading={state.isLoadingExportToXls} hidden={isEmptyArray(tagsStatistic)}
         onClick={() => exportDataToExcel(
           `${filter.fileName}.statistic${addTimestamp ? DOT_SIGN + dayjs().format(EXPORT_DATE_FORMAT) : ''}.xlsx`,
           state.tagsStatistic,
@@ -276,10 +316,10 @@ const TagGenerator: React.FC<Props> = (props: Props): ReactElement => {
     <br/>
     <Form.Item hidden={!state.isLoadingStatistic}>
       <Progress status={state.isLoadingStatistic ? 'active' : 'normal'}
-        percent={state.tagsStatisticCount > 0 ? Math.round((state.tagsStatisticCount / state.tagsCloud.length) * 100) :
+        percent={state.tagsStatisticCount > 0 ? Math.round((state.tagsStatisticCount / state.tags.length) * 100) :
           0}/>
       <Countdown title={'Осталось'}
-        value={calcDeadline(state.tagsStatisticStartDate, state.tagsStatisticCount, state.tagsCloud.length)}/>
+        value={calcDeadline(state.tagsStatisticStartDate, state.tagsStatisticCount, state.tags.length)}/>
     </Form.Item>
     <Form.Item hidden={state.isLoadingStatistic || isEmptyArray(tagsStatistic)}>
       <ResultTable data={tagsStatistic} headers={tagsStatisticHeaders}/>

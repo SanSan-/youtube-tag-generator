@@ -1,13 +1,15 @@
 import ActionType from '~enums/module/TagsGenerator';
-import { TagsState } from '~types/state';
+import { Keywords, TagsState, TagStatisticItem } from '~types/state';
 import { TagsAction } from '~types/action';
 import produce from 'immer';
 import { saveStringAsFile } from '~utils/SaveUtils';
 import { ContentType } from '~enums/Http';
-import { CompvolObj } from '~types/response';
+import { CompvolObj, FileActionType } from '~types/response';
+import { FileAction, FileContent, FileFormat } from '~enums/File';
 
 export const initialState: TagsState = {
-  tagsCloud: [],
+  keywords: {},
+  tags: [],
   tagsStatistic: [],
   tagsStatisticCount: 0,
   tagsStatisticStartDate: null,
@@ -16,37 +18,8 @@ export const initialState: TagsState = {
   isLoadingExportToCsv: false,
   isLoadingExportToXls: false,
   isLoadingGeneration: false,
-  isLoadingStatistic: false
-};
-
-const startExportToJson = (draft: TagsState): TagsState => {
-  draft.isLoadingExportToJson = true;
-  return draft;
-};
-
-const endExportToJson = (draft: TagsState): TagsState => {
-  draft.isLoadingExportToJson = false;
-  return draft;
-};
-
-const startExportToCsv = (draft: TagsState): TagsState => {
-  draft.isLoadingExportToCsv = true;
-  return draft;
-};
-
-const endExportToCsv = (draft: TagsState): TagsState => {
-  draft.isLoadingExportToCsv = false;
-  return draft;
-};
-
-const startExportToXls = (draft: TagsState): TagsState => {
-  draft.isLoadingExportToXls = true;
-  return draft;
-};
-
-const endExportToXls = (draft: TagsState): TagsState => {
-  draft.isLoadingExportToXls = false;
-  return draft;
+  isLoadingStatistic: false,
+  isFileActionFailed: false
 };
 
 const startGeneration = (draft: TagsState): TagsState => {
@@ -91,23 +64,8 @@ const testConnectionRefresh = (draft: TagsState): TagsState => {
   return draft;
 };
 
-const exportToJsonSuccess = (draft: TagsState, data: string, fileName: string): TagsState => {
-  saveStringAsFile(data, fileName, ContentType.JSON);
-  return endExportToJson(draft);
-};
-
-const exportToCsvSuccess = (draft: TagsState, data: string, fileName: string): TagsState => {
-  saveStringAsFile(data, fileName, ContentType.CSV);
-  return endExportToCsv(draft);
-};
-
-const exportToXlsSuccess = (draft: TagsState, data: string, fileName: string): TagsState => {
-  saveStringAsFile(data, fileName, ContentType.XLSX);
-  return endExportToXls(draft);
-};
-
 const generationSuccess = (draft: TagsState, data: string[]): TagsState => {
-  draft.tagsCloud = data;
+  draft.tags = data;
   return endGeneration(draft);
 };
 
@@ -128,9 +86,81 @@ const addStatisticSuccess = (draft: TagsState, compvol: CompvolObj): TagsState =
   return incStatisticCounter(draft);
 };
 
+const fileActionSuccess = (
+  draft: TagsState, fileAction: FileActionType, fileName: string, stringData: string, content: unknown): TagsState => {
+  draft.isFileActionFailed = false;
+  draft.fileActionError = null;
+  if (fileAction.actionType === FileAction.EXPORT) {
+    switch (fileAction.format) {
+      case FileFormat.JSON: {
+        saveStringAsFile(stringData, fileName, ContentType.JSON);
+        draft.isLoadingExportToJson = false;
+        break;
+      }
+      case FileFormat.CSV: {
+        saveStringAsFile(stringData, fileName, ContentType.CSV);
+        draft.isLoadingExportToCsv = false;
+        break;
+      }
+      case FileFormat.EXCEL: {
+        saveStringAsFile(stringData, fileName, ContentType.XLSX);
+        draft.isLoadingExportToXls = false;
+        break;
+      }
+    }
+  } else {
+    switch (fileAction.contentType) {
+      case FileContent.STATISTIC: {
+        draft.tagsStatistic = content as TagStatisticItem[];
+        break;
+      }
+      case FileContent.TAGS: {
+        draft.tags = content as string[];
+        break;
+      }
+      case FileContent.KEYWORDS: {
+        draft.keywords = content as Keywords;
+        break;
+      }
+    }
+  }
+  return draft;
+};
+
+const fileActionFail = (draft: TagsState, importError: string): TagsState => {
+  draft.isFileActionFailed = true;
+  draft.fileActionError = importError;
+  return draft;
+};
+
+const switchFileAction = (isLoading: boolean) => (draft: TagsState, fileAction: FileActionType): TagsState => {
+  if (fileAction.actionType === FileAction.EXPORT) {
+    switch (fileAction.format) {
+      case FileFormat.JSON: {
+        draft.isLoadingExportToJson = isLoading;
+        break;
+      }
+      case FileFormat.CSV: {
+        draft.isLoadingExportToCsv = isLoading;
+        break;
+      }
+      case FileFormat.EXCEL: {
+        draft.isLoadingExportToXls = isLoading;
+        break;
+      }
+    }
+  }
+  return draft;
+};
+
+const startFileAction = (draft: TagsState, fileAction: FileActionType): TagsState => switchFileAction(true)(
+  draft, fileAction);
+
+const endFileAction = (draft: TagsState, fileAction: FileActionType): TagsState => switchFileAction(false)(
+  draft, fileAction);
+
+
 const tagsGenerator = (state: TagsState = initialState, action: TagsAction): TagsState =>
-// TODO: decomposition switch
-// eslint-disable-next-line complexity
   produce(state, (draft: TagsState): TagsState => {
     switch (action.type) {
       case ActionType.TAGS_GENERATION_SUCCESS:
@@ -140,7 +170,7 @@ const tagsGenerator = (state: TagsState = initialState, action: TagsAction): Tag
       case ActionType.END_TAGS_GENERATION:
         return endGeneration(draft);
       case ActionType.ADD_STATISTIC_SUCCESS:
-        return addStatisticSuccess(draft, action.tagStatistic);
+        return addStatisticSuccess(draft, action.statisticResponse);
       case ActionType.START_LOAD_STATISTIC:
         return startLoadStatistic(draft);
       case ActionType.END_LOAD_STATISTIC:
@@ -149,30 +179,20 @@ const tagsGenerator = (state: TagsState = initialState, action: TagsAction): Tag
         return incStatisticCounter(draft);
       case ActionType.REFRESH_STATISTIC_COUNT:
         return refreshStatistic(draft);
-      case ActionType.EXPORT_TO_JSON_SUCCESS:
-        return exportToJsonSuccess(draft, action.stringData, action.fileName);
-      case ActionType.START_EXPORT_TO_JSON:
-        return startExportToJson(draft);
-      case ActionType.END_EXPORT_TO_JSON:
-        return endExportToJson(draft);
-      case ActionType.EXPORT_TO_CSV_SUCCESS:
-        return exportToCsvSuccess(draft, action.stringData, action.fileName);
-      case ActionType.START_EXPORT_TO_CSV:
-        return startExportToCsv(draft);
-      case ActionType.END_EXPORT_TO_CSV:
-        return endExportToCsv(draft);
-      case ActionType.EXPORT_TO_EXCEL_SUCCESS:
-        return exportToXlsSuccess(draft, action.stringData, action.fileName);
-      case ActionType.START_EXPORT_TO_EXCEL:
-        return startExportToXls(draft);
-      case ActionType.END_EXPORT_TO_EXCEL:
-        return endExportToXls(draft);
       case ActionType.TEST_CONNECTION_SUCCESS:
         return testConnectionSuccess(draft);
       case ActionType.TEST_CONNECTION_FAILED:
         return testConnectionFailed(draft);
       case ActionType.TEST_CONNECTION_REFRESH:
         return testConnectionRefresh(draft);
+      case ActionType.START_FILE_ACTION:
+        return startFileAction(draft, action.fileAction);
+      case ActionType.END_FILE_ACTION:
+        return endFileAction(draft, action.fileAction);
+      case ActionType.FILE_ACTION_SUCCESS:
+        return fileActionSuccess(draft, action.fileAction, action.fileName, action.stringData, action.importContent);
+      case ActionType.FILE_ACTION_FAIL:
+        return fileActionFail(draft, action.fileActionError);
       case ActionType.INIT:
         return initialState;
       default:
