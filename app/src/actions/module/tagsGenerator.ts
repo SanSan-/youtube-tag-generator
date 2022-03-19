@@ -192,8 +192,11 @@ export const testConnection = (jwtToken: string): ThunkResult<Promise<void>, Tag
       })
         .mapLeft(() => dispatch(testConnectionFailed()));
     })
-    // eslint-disable-next-line no-console
-    .catch((response: Error) => console.error(response))
+    .catch((response: Error) => {
+      // eslint-disable-next-line no-console
+      console.error(response);
+      dispatch(endCollectStatistic());
+    })
 );
 
 const getStatistic = (tag: string, jwtToken: string): ThunkResult<Promise<void>, TagsAction> => (dispatch) => (
