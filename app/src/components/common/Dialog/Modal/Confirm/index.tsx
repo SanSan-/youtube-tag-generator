@@ -5,7 +5,6 @@ export interface Props {
   title?: string;
   children?: ReactNode;
   message?: ReactNode;
-  details?: ReactNode;
   okLabel?: ReactNode;
   cancelLabel?: ReactNode;
   resolve?: (arg: boolean) => void;

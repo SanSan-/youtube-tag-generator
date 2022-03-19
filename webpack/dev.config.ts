@@ -2,9 +2,9 @@ const path = require('path');
 const webpack = require('webpack');
 
 /* VERSION (from git tags), BRANCH and COMMIT to files header */
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const AntdDayjsWebpackPlugin = require('antd-dayjs-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const ESLintPlugin = require('eslint-webpack-plugin');
 
 const loaders = require('./loaders');
 const settings: { resourcePrefix: string, htmlPlugin: Record<string, unknown> } = require('./settings');
@@ -26,7 +26,6 @@ module.exports = {
         test: /\.css$/,
         use: [
           'style-loader',
-          MiniCssExtractPlugin.loader,
           'css-loader'
         ]
       },
@@ -36,7 +35,6 @@ module.exports = {
           loaders.getCacheLoader(path.resolve(settings.cacheDir, 'css')),
           loaders.getThreadLoader('css'),
           'style-loader',
-          MiniCssExtractPlugin.loader,
           'css-loader',
           'sass-loader'
         ]
@@ -47,7 +45,6 @@ module.exports = {
           loaders.getCacheLoader(path.resolve(settings.cacheDir, 'css')),
           loaders.getThreadLoader('css'),
           'style-loader',
-          MiniCssExtractPlugin.loader,
           'css-loader',
           {
             loader: 'less-loader',
@@ -80,12 +77,6 @@ module.exports = {
       },
       {
         test: /\.tsx?$/,
-        enforce: 'pre',
-        use: ['eslint-loader'],
-        exclude: /(node_modules)/
-      },
-      {
-        test: /\.tsx?$/,
         exclude: /node_modules/,
         use: [
           loaders.getCacheLoader(path.resolve(settings.cacheDir, 'js')),
@@ -108,17 +99,15 @@ module.exports = {
   },
   plugins: [
     new AntdDayjsWebpackPlugin(),
+    new ESLintPlugin({
+      extensions: ['ts', 'tsx']
+    }),
     new HtmlWebpackPlugin(settings.htmlPlugin),
     new webpack.DefinePlugin({
       __DEBUG__: JSON.stringify(true),
       __TEST__: JSON.stringify(false),
       SERVER_MODULE_NAME: JSON.stringify('new-begin'),
       SERVER_PATH: JSON.stringify('../api')
-    }),
-    new MiniCssExtractPlugin({
-      filename: `./css/[name].[contenthash]${settings.resourcePrefix}.css`,
-      chunkFilename: `./css/[id]${settings.resourcePrefix}.css`,
-      allChunks: true
     })
   ],
   optimization: {
@@ -142,9 +131,10 @@ module.exports = {
   },
   devtool: 'inline-source-map',
   devServer: {
-    clientLogLevel: 'info',
+    client: {
+      logging: 'info'
+    },
     compress: false,
-    contentBase: 'dist',
     historyApiFallback: {
       index: 'index.html'
     },
@@ -156,9 +146,11 @@ module.exports = {
         secure: false
       }
     },
-    stats: {
-      colors: true
+    devMiddleware: {
+      stats: {
+        colors: true
+      }
     },
-    watchContentBase: true
+    watchFiles: 'dist'
   }
 };

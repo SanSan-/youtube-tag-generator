@@ -11,7 +11,7 @@ const SUM_ONLY_DOTS_MASK = /^[\d]+([.][\d]{1,2})?$/;
 export const NAME_MASK = /^([\u0400-\u04FFA-Za-z]+)[ ]([\u0400-\u04FFA-Za-z]+)[ ]?([\u0400-\u04FFA-Za-z]+)?$/;
 const UUID_MASK = /^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[1-5][0-9A-Fa-f]{3}-[89ABab][0-9A-Fa-f]{3}-[0-9A-Fa-f]{12}$/;
 
-export const trimSpaces = (text:string): string => text.replace(WHITE_SPACE_FORMAT, EMPTY_STRING);
+export const trimSpaces = (text:string): string => text.replace(WHITE_SPACE_FORMAT, EMPTY_STRING).trim();
 export const sumFormatter = (text:string): string => trimSpaces(text).replace(SUM_FORMAT, WHITE_SPACE_REPLACE_FORMAT);
 export const numValidator = (text: string): boolean => NUMBER_MASK.test(text);
 export const numAndWordValidator = (text: string): boolean => NUMBER_AND_WORD_MASK.test(text);
