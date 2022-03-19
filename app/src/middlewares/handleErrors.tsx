@@ -76,7 +76,7 @@ const handleUnexpectedException = (arg: ErrorResponse): ThunkResult<void, Common
 };
 
 const handleError = (arg: ErrorResponse): ThunkResult<void, CommonAction> => (dispatch) => {
-  dispatch(actions.showError(UNEXPECTED_ERROR, JSON.stringify(arg), null));
+  dispatch(actions.showError(UNEXPECTED_ERROR, String(arg), null));
 };
 
 const catchError = (arg: ErrorResponse): ThunkResult<void, CommonAction> => (dispatch) => {

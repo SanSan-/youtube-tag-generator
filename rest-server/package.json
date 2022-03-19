@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "rest:develop": "set NODE_OPTIONS=--max_old_space_size=4096 && nodemon -r esm server.js",
-    "rest:start": "node -r esm server.js --max_old_space_size=4096"
+    "rest:develop": "set NODE_OPTIONS=--max_old_space_size=8192 && nodemon -r esm server.js",
+    "rest:start": "node -r esm server.js --max_old_space_size=8192"
   },
   "author": "",
   "license": "ISC",

@@ -143,14 +143,14 @@ export const exportDataToJson = (fileName: string, data: string): ThunkResult<vo
 
 export const exportDataToCsv = <T extends TagItem> (
   fileName: string, json: T[]): ThunkResult<void, TagsAction> => (dispatch) => {
-    dispatch(startFileAction({ actionType: FileAction.EXPORT, format: FileFormat.CSV }));
-    try {
-      dispatch(
-        fileActionSuccess({ actionType: FileAction.EXPORT, format: FileFormat.CSV }, parseJsonToCsv(json), fileName));
-    } finally {
-      endFileAction({ actionType: FileAction.EXPORT, format: FileFormat.CSV });
-    }
-  };
+  dispatch(startFileAction({ actionType: FileAction.EXPORT, format: FileFormat.CSV }));
+  try {
+    dispatch(
+      fileActionSuccess({ actionType: FileAction.EXPORT, format: FileFormat.CSV }, parseJsonToCsv(json), fileName));
+  } finally {
+    endFileAction({ actionType: FileAction.EXPORT, format: FileFormat.CSV });
+  }
+};
 
 export const exportDataToExcel = <T extends TagItem> (
   fileName: string,
@@ -159,10 +159,10 @@ export const exportDataToExcel = <T extends TagItem> (
   headers: Record<string, unknown>[],
   conditionalFormatting: Record<string, unknown>[] = []
 ): ThunkResult<Promise<void>, TagsAction> => exportToExcelAction(
-    headers ? { fileName, json, type, headers, conditionalFormatting } : { fileName, json, type }, exportApi.toExcel,
-    () => startFileAction({ actionType: FileAction.EXPORT, format: FileFormat.EXCEL }),
-    () => endFileAction({ actionType: FileAction.EXPORT, format: FileFormat.EXCEL })
-  );
+  headers ? { fileName, json, type, headers, conditionalFormatting } : { fileName, json, type }, exportApi.toExcel,
+  () => startFileAction({ actionType: FileAction.EXPORT, format: FileFormat.EXCEL }),
+  () => endFileAction({ actionType: FileAction.EXPORT, format: FileFormat.EXCEL })
+);
 
 export const generateTagsCloud = (cloudMap: string[][]): ThunkResult<void, TagsAction> => (dispatch) => {
   dispatch(startTagsGeneration());
@@ -192,8 +192,11 @@ export const testConnection = (jwtToken: string): ThunkResult<Promise<void>, Tag
       })
         .mapLeft(() => dispatch(testConnectionFailed()));
     })
-    // eslint-disable-next-line no-console
-    .catch((response: Error) => console.error(response))
+    .catch((response: Error) => {
+      // eslint-disable-next-line no-console
+      console.error(response);
+      dispatch(endCollectStatistic());
+    })
 );
 
 const getStatistic = (tag: string, jwtToken: string): ThunkResult<Promise<void>, TagsAction> => (dispatch) => (
