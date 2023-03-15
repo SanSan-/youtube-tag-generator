@@ -10,7 +10,7 @@ import { isEmpty, isEmptyArray } from '~utils/CommonUtils';
 import { TagItem } from '~types/state';
 import { AnyResponse } from '~types/response';
 
-const FILENAME_MASK = /filename[^;\n]*=\s*(UTF-\d['"]*)?((['"]).*?[.]$\2|[^;\n]*)?/gi;
+const FILENAME_MASK = /filename[^;\n]*=\s*(UTF-\d['"]*)?((['"]).*?[.]$|[^;\n]*)?/gi;
 
 export const saveBase64StringAsFile = (data: string, fileName: string): void => {
   const blob = new Blob(

@@ -1,22 +1,15 @@
 const path = require('path');
 const webpack = require('webpack');
 
-/* VERSION (from git tags), BRANCH and COMMIT to files header */
-const GitRevisionPlugin = require('git-revision-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const WrapperPlugin = require('wrapper-webpack-plugin');
 const TerserJsPlugin = require('terser-webpack-plugin');
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const AntdDayjsWebpackPlugin = require('antd-dayjs-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const ESLintPlugin = require('eslint-webpack-plugin');
 
 const loaders = require('./loaders');
 const settings: { resourcePrefix: string, htmlPlugin: Record<string, unknown> } = require('./settings');
-
-const gitRevisionPlugin: { version: () => string, branch: () => string, commithash: () => string } =
-  new GitRevisionPlugin({ branch: true, lightweightTags: true });
-/* eslint-disable-next-line max-len */
-const versionComment = `/* Version ${gitRevisionPlugin.version()}; branch: ${gitRevisionPlugin.branch()}; commit hash: ${gitRevisionPlugin.commithash()} */`;
 
 module.exports = {
   mode: 'production',
@@ -32,7 +25,6 @@ module.exports = {
       {
         test: /\.css$/,
         use: [
-          'style-loader',
           MiniCssExtractPlugin.loader,
           'css-loader'
         ]
@@ -40,9 +32,6 @@ module.exports = {
       {
         test: /\.scss$/,
         use: [
-          loaders.getCacheLoader(path.resolve(settings.cacheDir, 'css')),
-          loaders.getThreadLoader('css'),
-          'style-loader',
           MiniCssExtractPlugin.loader,
           'css-loader',
           'sass-loader'
@@ -51,9 +40,6 @@ module.exports = {
       {
         test: /\.less$/,
         use: [
-          loaders.getCacheLoader(path.resolve(settings.cacheDir, 'css')),
-          loaders.getThreadLoader('css'),
-          'style-loader',
           MiniCssExtractPlugin.loader,
           'css-loader',
           {
@@ -87,12 +73,6 @@ module.exports = {
       },
       {
         test: /\.tsx?$/,
-        enforce: 'pre',
-        use: ['eslint-loader'],
-        exclude: /(node_modules)/
-      },
-      {
-        test: /\.tsx?$/,
         exclude: /node_modules/,
         use: [
           loaders.getCacheLoader(path.resolve(settings.cacheDir, 'js')),
@@ -115,6 +95,9 @@ module.exports = {
   },
   plugins: [
     new AntdDayjsWebpackPlugin(),
+    new ESLintPlugin({
+      extensions: ['ts', 'tsx']
+    }),
     new HtmlWebpackPlugin(settings.htmlPlugin),
     new webpack.DefinePlugin({
       __DEBUG__: JSON.stringify(false),
@@ -123,14 +106,10 @@ module.exports = {
       SERVER_PATH: JSON.stringify('../api')
     }),
     new MiniCssExtractPlugin({
-      filename: `./css/[name].bundle${settings.resourcePrefix}.css`,
-      allChunks: true
+      filename: `./css/[name].bundle${settings.resourcePrefix}.css`
     }),
     new webpack.LoaderOptionsPlugin({
       minimize: true
-    }),
-    new WrapperPlugin({
-      header: versionComment + '\r\n'
     })
   ],
   optimization: {

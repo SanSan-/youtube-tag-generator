@@ -107,7 +107,7 @@ const handleErrorResponse = (response: Response, text: string): Either<ErrorType
   const handleUnknownResult = (): Either<ErrorType, unknown> => {
     // eslint-disable-next-line no-console
     console.error(`${UNKNOWN_RESULT}${text}`);
-    return left(new Error(`${INCORRECT_SERVER_RESULT}${response.status}${SPACE_SIGN}${response.statusText}`));
+    return left(new Error(`${INCORRECT_SERVER_RESULT}${response.status}${SPACE_SIGN}${text}`));
   };
   if (response.status >= ResponseStatus._400 && response.status <= ResponseStatus._599) {
     let json;

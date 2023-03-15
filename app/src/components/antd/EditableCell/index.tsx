@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Form, Input } from 'antd';
 import { EditableContext } from '~components/antd/EditableRow';
+import { EMPTY_FUNC } from '~const/common';
 
 interface Item {
   key: string;
@@ -28,12 +29,13 @@ const EditableCell: React.FC<EditableCellProps> = ({
   ...restProps
 }) => {
   const [editing, setEditing] = useState(false);
-  const inputRef = useRef<Input>(null);
+  const inputRef = useRef<typeof Input>(null);
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const form = useContext(EditableContext)!;
 
   useEffect(() => {
     if (editing) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       inputRef.current.focus();
     }
   }, [editing]);
@@ -43,9 +45,9 @@ const EditableCell: React.FC<EditableCellProps> = ({
     form.setFieldsValue({ [dataIndex]: record[dataIndex] });
   };
 
-  const save = async () => {
+  const asyncSave = async () => {
     try {
-      const values = await form.validateFields();
+      const values = await form.validateFields() as Item;
 
       toggleEdit();
       handleSave({ ...record, ...values });
@@ -53,6 +55,9 @@ const EditableCell: React.FC<EditableCellProps> = ({
       // eslint-disable-next-line no-console
       console.error('Save failed:', errInfo);
     }
+  };
+  const save = () => {
+    asyncSave().then(EMPTY_FUNC);
   };
 
   let childNode = children;
